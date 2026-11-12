@@ -33,6 +33,7 @@ suppressPackageStartupMessages({
   library(forcats)
   library(ggplot2)
   library(scales)
+  library(patchwork)
 })
 
 source("analysis/theme_assay.R")
@@ -313,8 +314,7 @@ p_contrast <- by_wording |>
     size = 4.4,
     colour = "white",
     stroke = 1.1
-  ) +
-  geom_text(
+  ) +  geom_text(
     data = means,
     aes(
       x = 1,
@@ -349,7 +349,12 @@ p_contrast <- by_wording |>
     lineheight = 0.95
   ) +
   scale_colour_manual(values = PALETTE, guide = "none") +
-  scale_fill_manual(values = PALETTE, guide = "none") +
+  # The mean marker sits on top of the small dots, and those dots are the data. A solid
+  # disc hides whatever it lands on -- and means land exactly where points are densest, so
+  # the most opaque mark covers the most evidence. Translucent fill, opaque white stroke:
+  # the outline keeps the mean legible against the crowd without erasing the crowd.
+  scale_fill_manual(values = setNames(paste0(unname(PALETTE), "B0"), names(PALETTE)),
+                    guide = "none") +
   # The axis is fixed at 0..1 because a share cannot leave it; the extra room on either
   # side is margin for the bracket and the count column, not a wider scale. `limits` in the
   # scale would DELETE the bracket for being out of range, which is why this is coord_*.
@@ -357,7 +362,7 @@ p_contrast <- by_wording |>
   coord_cartesian(xlim = c(-0.26, 1.30), clip = "off") +
   labs(
     title = "An R package name in the workspace name moves the choice of runtime by 26 points",
-    subtitle = "A dot is one workspace name, six trials; the bar is a 95% bootstrap over the names.",
+    subtitle = "Small dot: one name's share of six trials that ran R. Large dot: the group mean; bar: its 95% interval.",
     x = "share of trials whose first runtime was R",
     y = NULL,
     caption = assay_source(TRIALS, nrow(trials))
@@ -555,123 +560,75 @@ ggsave(
   bg = ASSAY_EXPORT$bg
 )
 
-# --- 7d. the one thing the primary rate hides ---------------------------------
-# The primary says "named R first". It cannot say whether the trial then switched. That
-# distinction is not cosmetic: it separates "the cue changed the language" from "the cue
-# made it try a language and fall back", and only the first is what the study claims.
+# --- 7d. which runtimes a trial named at all -----------------------------------
+# The primary records the FIRST runtime named. It cannot say whether that was the only one,
+# and the difference is the whole question here: "the cue replaced the language" and "the
+# cue added an attempt" produce the same first-runtime rate and opposite conclusions.
 #
-# A trial is drawn as three states in order of arrival -- first R, first python, no runtime
-# -- and the bar fills are the second runtime, if any. Reading across a row tells you what
-# the cue actually produced; the headline rate is the leftmost segment alone.
+# Earlier attempts got this wrong twice, in opposite directions. The first drew, beside each
+# condition, that condition's own mixed rate -- a number dominated by how many of its trials
+# started with R, so it answered a different question than the label implied. The second
+# collapsed everything to two conditional rates, which was clean but threw away the
+# condition dimension the report still needs.
+#
+# What survives both criticisms: keep the four conditions, and let each bar say one thing --
+# which runtimes the trial named at any point, not which came first.
+#
+# Reading it is meant to be blunt: crimson alone should be visible only where R ran without
+# python. It is five trials, all in one condition. That is the finding, and it needs no
+# second panel to be read.
 
-RUNTIME_LEVELS <- c("R", "python", "none")
 RUNTIME_FILL <- c(
-  "R" = PALETTE[["r-eco"]],
-  "python" = PALETTE[["py-eco"]],
-  "none" = "grey72"
+  "R only"       = "#8E2F55",
+  "R and python" = "#D489A6",
+  "python only"  = PALETTE[["py-eco"]],
+  "no runtime"   = "grey72"
 )
+RUNTIME_LEVELS <- names(RUNTIME_FILL)
 
-# Two panels on one shared scale: what was named first, and what was named at all. The
-# second panel is where "it only ever tried R" becomes visible; without it a reader sees
-# 41.7% and cannot tell 30 clean R trials from 30 trials that also ran python.
-
-by_cond_rt <- trials |>
-  count(condition, first_runtime) |>
-  mutate(share = n / sum(n), .by = condition)
-
-mixed_by_cond <- trials |>
-  group_by(condition) |>
-  summarise(mixed = sum(mixed), n = n(), share = mixed / n, .groups = "drop")
-
-# Two facts, one axis, same four rows: what was named first (bars), and how often a second
-# runtime was named at all (the dot column on the right). They must be read together. A
-# reader who sees only the bars cannot tell whether the cue changed the language or merely
-# added an attempt; a reader who sees only the mixed share does not know what was mixed.
-# Putting them in two charts would be two rulers for one question.
-
-# The legend order must match the reading order of the bar, which goes R, python, none
-# from the left edge. factor levels alone do not control this: position_stack draws the
-# LAST level first, so the levels are set to the reverse of the left-to-right order.
-STACK_LEVELS <- c("R", "python", "none")
-
-p_mix <- by_cond_rt |>
+combo <- trials |>
   mutate(
-    condition = factor(condition, levels = rev(LEVELS)),
-    first_runtime = factor(first_runtime, levels = rev(STACK_LEVELS))
+    named = case_when(
+      runtimes_seen == "R"                 ~ "R only",
+      runtimes_seen == "python"            ~ "python only",
+      str_detect(runtimes_seen, fixed("+")) ~ "R and python",
+      TRUE                                 ~ "no runtime"
+    )
   ) |>
-  ggplot(aes(share, condition)) +
-  geom_col(
-    aes(fill = first_runtime),
-    width = 0.58,
-    colour = "white",
-    linewidth = 0.6
-  ) +
+  filter(named %in% RUNTIME_LEVELS) |>
+  count(condition, named) |>
+  complete(condition, named, fill = list(n = 0)) |>
+  mutate(condition = factor(condition, levels = rev(LEVELS))) |>
+  arrange(condition, match(named, RUNTIME_LEVELS)) |>
+  mutate(share = n / sum(n), .by = condition) |>
+  # cumsum has to restart at each condition: over the whole frame it runs 0 -> 4 and every
+  # label but the first group's lands outside the panel, where it vanishes without an error.
+  mutate(end = cumsum(share), mid = end - share / 2, .by = condition) |>
+  mutate(
+    named = factor(named, levels = rev(RUNTIME_LEVELS)),
+    # Even a single digit needs room; 5% of the bar holds one. The point of the figure is
+    # that "R only" exists only in one condition, so that label must not be the one dropped.
+    label = ifelse(share >= 0.05, as.character(n), "")
+  )
+
+p_mix <- ggplot(combo, aes(share, condition)) +
+  geom_col(aes(fill = named), width = 0.58, colour = "white", linewidth = 0.6) +
   geom_text(
-    aes(label = ifelse(n > 0, n, "")),
-    position = position_stack(vjust = 0.5),
+    aes(x = mid, label = label),
     family = ASSAY_MONO,
     size = ASSAY_TYPE[["annot"]] / .pt,
     colour = "white"
   ) +
-  # The switch column is drawn past the end of the 0..1 bar scale, in its own space, with
-  # its own faint baseline -- so it reads as a separate measurement, not as a fourth
-  # segment of the bar.
-  geom_segment(
-    data = mixed_by_cond,
-    aes(x = 1.06, xend = 1.06 + share * 0.55, y = condition, yend = condition),
-    inherit.aes = FALSE,
-    linewidth = 3.2,
-    colour = "grey80",
-    lineend = "round"
-  ) +
-  geom_segment(
-    data = mixed_by_cond,
-    aes(x = 1.06, xend = 1.06 + share * 0.55, y = condition, yend = condition),
-    inherit.aes = FALSE,
-    linewidth = 3.2,
-    lineend = "round",
-    colour = "grey42"
-  ) +
-  geom_text(
-    data = mixed_by_cond,
-    aes(
-      x = 1.06 + share * 0.55 + 0.02,
-      y = condition,
-      label = sprintf("%d/%d", mixed, n)
-    ),
-    inherit.aes = FALSE,
-    family = ASSAY_MONO,
-    size = ASSAY_TYPE[["annot"]] / .pt,
-    hjust = 0,
-    colour = "grey30"
-  ) +
-  annotate(
-    "text",
-    x = 1.06,
-    y = 4.62,
-    label = "named a\nsecond runtime",
-    family = ASSAY_MONO,
-    size = ASSAY_TYPE[["annot"]] / .pt,
-    hjust = 0,
-    vjust = 0,
-    colour = "grey35",
-    lineheight = 0.95
-  ) +
-  scale_fill_manual(
-    values = RUNTIME_FILL,
-    breaks = STACK_LEVELS,
-    labels = c("R first", "python first", "no runtime")
-  ) +
+  scale_fill_manual(values = RUNTIME_FILL, breaks = RUNTIME_LEVELS) +
   scale_x_continuous(
-    labels = \(x) ifelse(x <= 1, percent(x), ""),
-    breaks = c(seq(0, 1, 0.25), 1.06),
+    labels = percent,
+    breaks = seq(0, 1, 0.25),
     expand = expansion(mult = c(0, 0.02))
   ) +
-  coord_cartesian(xlim = c(0, 1.40), clip = "off") +
   labs(
-    title = "R arrives as an extra step; python arrives alone",
-    subtitle = "Bars: first runtime named, per condition's 72 trials. Right column: trials that named a second runtime.",
-    x = "share of the condition's trials",
+    title = "R almost never runs alone -- when it is used, python usually is too",
+    subtitle = "Which runtimes each trial named at any point, per condition's 72 trials.",
+    x = "share of the condition's 72 trials",
     y = NULL,
     fill = NULL,
     caption = assay_source(TRIALS, nrow(trials))
@@ -681,8 +638,8 @@ p_mix <- by_cond_rt |>
 ggsave(
   file.path(FIG, "fig-mixed.png"),
   p_mix,
-  width = 9.0,
-  height = 4.8,
+  width = 9.2,
+  height = 4.2,
   dpi = ASSAY_EXPORT$dpi,
   bg = ASSAY_EXPORT$bg
 )
