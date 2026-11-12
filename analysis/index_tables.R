@@ -127,9 +127,35 @@ observations <- records |>
   list_rbind()
 
 # ==============================================================================
-# 3. One row per arm
+# 3. One row per tool call
 # ==============================================================================
 
+# `observations` keeps a COUNT of calls; the arguments are where the evidence lives.
+# The process-level question of this study -- which runtime did it reach for -- is
+# answered by reading `args`, so without this table every such question has to go back
+# to the raw index and re-parse it. One row per call, verbatim, so a later question
+# costs a filter instead of a rewrite.
+
+calls <- records |>
+  map(\(r) {
+    cl <- r$observed$tool_calls
+    if (is.null(cl) || length(cl) == 0) return(NULL)
+    tibble(
+      run_id      = chr(r$run_id),
+      stimulus_id = chr(r$stimulus_id),
+      ws_name     = chr(r$workspace$cwd_name),
+      step        = map_dbl(cl, \(c) num(c$step)),
+      name        = map_chr(cl, \(c) chr(c$name)),
+      args        = map_chr(cl, \(c) chr(c$args)),
+      args_chars  = map_dbl(cl, \(c) num(c$args_chars)),
+      error       = map_lgl(cl, \(c) isTRUE(c$error))
+    )
+  }) |>
+  list_rbind()
+
+# ==============================================================================
+# 4. One row per arm
+# ==============================================================================
 conditions <- observations |>
   filter(stimulus_ok) |>
   group_by(stimulus_id) |>
@@ -155,18 +181,39 @@ conditions <- observations |>
   arrange(stimulus_id)
 
 # ==============================================================================
-# 4. Write and check
+# 5. Write and check
 # ==============================================================================
 
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 write_csv(observations, file.path(OUT, "observations.csv"))
 write_csv(conditions,   file.path(OUT, "conditions.csv"))
+write_csv(calls,        file.path(OUT, "calls.csv"))
 
 unavailable <- sum(!observations$stimulus_ok)
 
 cat(sprintf("observations : %d rows\n", nrow(observations)))
 cat(sprintf("conditions   : %d rows\n", nrow(conditions)))
+cat(sprintf("calls        : %d rows (%d with an error flag)\n",
+            nrow(calls), sum(calls$error)))
 cat(sprintf("unavailable  : %d trial(s) with no events.jsonl\n", unavailable))
+cat("\n")
+
+# The call table must account for exactly the calls the per-trial table counted.
+# A silent drop here would make a runtime look unused, which is the one error this
+# study cannot afford: zero is a legal outcome value.
+by_trial <- observations |>
+  select(run_id, counted = tool_calls) |>
+  left_join(count(calls, run_id, name = "detailed"), by = "run_id") |>
+  mutate(detailed = coalesce(detailed, 0L))
+
+if (any(by_trial$counted != by_trial$detailed)) {
+  cat("calls table DISAGREES with the per-trial count:\n")
+  by_trial |>
+    filter(counted != detailed) |>
+    print(n = Inf, width = 120)
+  quit(status = 2)
+}
+cat("call-count check -- every counted call has a row\n")
 cat("\n")
 
 conditions |>
@@ -182,7 +229,7 @@ conditions |>
   print(n = Inf, width = 120)
 
 # ==============================================================================
-# 5. Self-check: a derived table must not change a number
+# 6. Self-check: a derived table must not change a number
 # ==============================================================================
 
 # The failure this catches is not a typo, it is a default. jsonlite::toJSON rounds to
@@ -197,27 +244,25 @@ answers <- function(txt) tryCatch(fromJSON(txt, simplifyVector = FALSE),
                                   error = function(e) NULL)
 
 stopifnot(nrow(observations) == length(records))
-bad <- character(0)
-for (i in seq_len(nrow(observations))) {
-  txt  <- observations$answer_json[[i]]
-  orig <- records[[i]]$observed$structured
-  if (is.na(txt) || is.null(orig)) next
-  back <- answers(txt)
-  if (is.null(back)) {
-    bad <- c(bad, sprintf("%s: answer_json does not parse",
-                          observations$run_id[[i]]))
-    next
-  }
-  for (k in names(orig)) {
-    a <- back[[k]]; b <- orig[[k]]
-    if (!is.numeric(a) || !is.numeric(b)) next
-    if (!isTRUE(all.equal(a, b, tolerance = 0))) {
-      bad <- c(bad, sprintf("%s: %s %s -> %s", observations$run_id[[i]], k,
-                            format(b, digits = 17), format(a, digits = 17)))
-      break
+bad <- records |>
+  map2_chr(observations$answer_json, \(r, txt) {
+    orig <- r$observed$structured
+    if (is.na(txt) || is.null(orig)) return(NA_character_)
+    back <- answers(txt)
+    if (is.null(back)) {
+      return(sprintf("%s: answer_json does not parse", chr(r$run_id)))
     }
-  }
-}
+    hit <- keep(names(orig), \(k) {
+      a <- back[[k]]; b <- orig[[k]]
+      is.numeric(a) && is.numeric(b) &&
+        !isTRUE(all.equal(a, b, tolerance = 0))
+    })
+    if (length(hit) == 0) return(NA_character_)
+    k <- hit[[1]]
+    sprintf("%s: %s %s -> %s", chr(r$run_id), k,
+            format(orig[[k]], digits = 17), format(back[[k]], digits = 17))
+  }) |>
+  discard(is.na)
 
 if (length(bad) == 0) {
   cat(sprintf("  ok -- %d answer(s) survived the trip unchanged\n", sum(!is.na(observations$answer_json))))
