@@ -11,6 +11,7 @@
 | `workspace.py` | 从模板造工作区；跑完快照 | `batch_plan` 用同名槽位约定 | `create` 两次同名必须失败 |
 | `grade.py` | 按准则判定观测 | — | 换 `criteria_id` 重算，观测 sha 不变 |
 | `exposure_check.py` | 交付上下文里有没有没人声明的 cue | 跑批前的闸门 | 占一个词表里的槽位必须 FAIL |
+| `check_delivery.py` | 每 12 条核对一次：交付的工具表/系统提示仍唯一、题面仍等于 plan | 跑批中途的闸门 | 故意改一次 schema 键序应 exit 2 |
 | `patch_host_notice.py` | 宿主通知的窗口补丁 | 跑批前后各一次 | `--apply --expect patched` 后 `--check` 读 patched；`--revert` 后读 original 且包目录只剩原件 |
 | `batch_plan.py` | 臂表 + 题面 → 待跑表（按重复交错）；跑前后各查一次：槽位状态、宿主摘要单值、记录与声明是否逐字节一致 | 跑批 | `--verify` 在占位槽位上 exit 2；摘要或题面不符也 exit 2 |
 
