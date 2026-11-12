@@ -29,6 +29,13 @@
       { "n": 3, "orders": [193, 288], "trials": 96, "rounds": [5, 6] }
     ],
     "host_window": "opened and closed per sub-batch, never left open between them: --apply --expect patched, reload, run, --revert --expect original, reload, --check must read original with no backup",
+    "_delivery_check_every_12": "The prompt and the output schema have to be re-typed into every harness_run call; there is no way to pass them by reference. That makes each call an independent chance to drift, and the drift is invisible to our own canonical hashing. Measured on this project: two occurrences, one of which was only found after 28 trials had run. So after every group of 12 trials the recorded toolSchemaDigest and prompt hash are compared against the first trial of the sub-batch, BEFORE the next group starts. A drifting group is discarded and re-run; this is the instrument-failure case below, not an outcome-based exclusion.",
+    "gate_after_each_group_of_12": [
+      "toolSchemaDigest identical to the group's first trial",
+      "systemPrompt.digest identical",
+      "sha256(run.json task.prompt) identical to the plan's prompt_sha",
+      "no stopReason other than completed/error counted separately"
+    ],
     "gate_after_each_sub_batch": [
       "exposure_check must PASS",
       "batch_plan --verify must report no new problem",
