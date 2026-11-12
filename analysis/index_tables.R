@@ -116,7 +116,12 @@ observations <- records |>
       in_total        = num(tu$uncachedInputTokens) + num(tu$cacheReadTokens),
       out_tokens      = num(tu$outputTokens),
       answer_json     = if (is.null(o$structured)) NA_character_
-                        else as.character(toJSON(o$structured, auto_unbox = TRUE))
+                        # digits = NA keeps every digit. jsonlite::toJSON defaults to
+                        # digits = 4, which silently rounds an answer on its way into
+                        # this table: invisible while the answers happened to carry four
+                        # significant digits, fatal on a task that asks for six. The
+                        # record is right either way; this file was the liar.
+                        else as.character(toJSON(o$structured, auto_unbox = TRUE, digits = NA))
     )
   }) |>
   list_rbind()
@@ -175,3 +180,52 @@ conditions |>
   filter(n_inputs > 1) |>
   select(stimulus_id, n_inputs, n_runs, n_trials) |>
   print(n = Inf, width = 120)
+
+# ==============================================================================
+# 5. Self-check: a derived table must not change a number
+# ==============================================================================
+
+# The failure this catches is not a typo, it is a default. jsonlite::toJSON rounds to
+# four significant digits unless told otherwise, so every answer passed through this
+# file rounded -- silently, for as long as the answers happened to be four digits.
+# Only a task asking for six exposed it. A check is the only defence: nobody chose
+# that behaviour, so nobody will remember it.
+cat("\n")
+cat("round-trip check -- answer_json must reproduce the record exactly:\n")
+
+answers <- function(txt) tryCatch(fromJSON(txt, simplifyVector = FALSE),
+                                  error = function(e) NULL)
+
+stopifnot(nrow(observations) == length(records))
+bad <- character(0)
+for (i in seq_len(nrow(observations))) {
+  txt  <- observations$answer_json[[i]]
+  orig <- records[[i]]$observed$structured
+  if (is.na(txt) || is.null(orig)) next
+  back <- answers(txt)
+  if (is.null(back)) {
+    bad <- c(bad, sprintf("%s: answer_json does not parse",
+                          observations$run_id[[i]]))
+    next
+  }
+  for (k in names(orig)) {
+    a <- back[[k]]; b <- orig[[k]]
+    if (!is.numeric(a) || !is.numeric(b)) next
+    if (!isTRUE(all.equal(a, b, tolerance = 0))) {
+      bad <- c(bad, sprintf("%s: %s %s -> %s", observations$run_id[[i]], k,
+                            format(b, digits = 17), format(a, digits = 17)))
+      break
+    }
+  }
+}
+
+if (length(bad) == 0) {
+  cat(sprintf("  ok -- %d answer(s) survived the trip unchanged\n", sum(!is.na(observations$answer_json))))
+} else {
+  cat(sprintf("  %d answer(s) CHANGED between the index and this table:\n", length(bad)))
+  for (b in head(bad, 10)) cat("    ", b, "\n")
+  if (length(bad) > 10) cat(sprintf("     ... and %d more\n", length(bad) - 10))
+  cat("  A number that changes downstream makes every judgement made from this table\n")
+  cat("  a statement about the rounding, not about the answer.\n")
+  quit(status = 2)
+}
