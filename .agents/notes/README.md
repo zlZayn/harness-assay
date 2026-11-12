@@ -21,3 +21,4 @@
 
 - [操作者路径为何消不掉](2026-11-12-operator-path-leak.md) — 依据
 - [跑批顺序必须交错](2026-11-12-run-order-confound.md) — 决策
+- [W5 批次 1 读出了什么](2026-11-12-batch1-result.md) — 依据

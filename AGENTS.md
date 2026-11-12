@@ -27,24 +27,27 @@ python tools/patch_host_notice.py --check
 
 ## 验证快照
 
-- 记录层：14 条历史 run 上 `verify_index` 3/3 通过；`index_tables.R` 出 14 观测 / 13 条件；索引 `index_schema=2`，带 `observed.tool_calls` 原文。
-- 判定层：`answer-v1` 13 pass / 1 missing（那条 run 没有 events），`observations_sha` 稳定。
-- 过程层：`process_report` 在合成索引上按手算值核对过；真数据里 14 条全是跑批前的探针，无一条属臂表。
-- 通道体检：最新一条 run 为 FAIL（宿主已还原、未开窗），说明 guard 会响。
-- 跑批清单：`lang` 4 臂 × k=7 = 28 pending / 0 problem，prompt 与 schema 各单值。
+- 记录层：42 条 run 上 `verify_index` 3/3 通过；`index_tables.R` 出 42 观测 / 41 条件；索引 `index_schema=2`，带 `observed.tool_calls` 原文。
+- 判定层：`answer-v1` 39 pass / 3 missing（3 条没交出结构化答案），`observations_sha` 稳定。
+- 过程层：批次 1 的 28 条全在臂表内；R 仅出现在 `tidyverse` 臂（2/7），两中性臂 0/14。
+- 通道体检：PASS（28 条都在窗口内跑，通知不点名操作者路径）；更早 11 条仍是 FAIL 的历史记录。
+- 交付字节：`batch_plan --verify` 在批次 1 上 FAIL 过一次——1 条与其余 27 条的 `toolSchemaDigest` 不同，见`.agents/notes/2026-11-12-batch1-result.md`。
+- 宿主：`--check` 读 original，包目录只剩 `index.js` 与 `types/`。
 - 无 CI：本地即为全部验证。
 
 ## 待办
 
-- [ ] W5 第一批：`lang` 4 臂 × k=7 = 28 trial（含主结局的读数）
-- [ ] W5 第二批：`letter` 2 臂，k 由第一批的效应量决定，现在还定不了
+- [x] W5 第一批：`lang` 4 臂 × k=7 = 28 trial —— 已跑完，结论见 [依据记录](.agents/notes/2026-11-12-batch1-result.md)
+- [ ] W5 第二批：`letter` 2 臂；k 按批次 1 的实测率重算（p₁≈0.29，不是规划时的 0.4）
+- [ ] 重跑 `python`/`tidyverse` 的高 k 批次时，schema 必须按 `study/tasks/*.json` 的键序交付
 - [ ] 给 `analysis/` 一个 R 侧环境锁（`renv.lock`），当前无版本锁定
 - [ ] 补 CI 与本地钩子（L3 要求，暂缺）
 
 ## 活跃坑
 
 - 工作目录通知里的 `from` 是**会话根**，不是活的 cwd；`cd` 移不动它。想消掉只能开窗或换会话根 → [依据记录](.agents/notes/2026-11-12-operator-path-leak.md)
-- 同一条件的连续 run 里，结局随位置单调变化（wall ρ=−0.83、steps ρ=−0.90）；arm-major 会让臂与位置完全共线 → [决策记录](.agents/notes/2026-11-12-run-order-confound.md)
+- 手打两份 schema = 两份 schema。键序一变，规范哈希看不见、宿主 `toolSchemaDigest` 看得见 → [依据记录](.agents/notes/2026-11-12-batch1-result.md)
+- 位置效应**没有**复现：6 条上 ρ=−0.83，28 条上 ρ=+0.59。交错仍然要做，理由是"事后无法排除"，不是"已知有漂移" → [决策记录](.agents/notes/2026-11-12-run-order-confound.md)
 - `inputTokens` 是未缓存部分，命中缓存时读数小 8 倍；记账一律 `uncached + cacheRead`。
 - harness 文件必须住 `~/.dsh/profiles/web/harness/`，裸模块名只在那里解析得到；`spec/` 里的源要同步过去。
 - 槽位目录被清空会让历史记录变成悬空引用，且没有任何代码会报错。
