@@ -1,0 +1,88 @@
+{
+  "tokenizer": {
+    "name": "tiktoken",
+    "version": "0.12.0",
+    "encoding": "o200k_base",
+    "_caveat": "proxy. The subject runs on DeepSeek's tokenizer, which is not published. Absolute counts are approximate; differences between arms measured with this one tool are consistent."
+  },
+  "unit": "the full slot path as it reaches the subject, e.g. D:\\assay\\slots\\python-01",
+  "baseline": {
+    "shortest_slot": "r-01",
+    "tokens": 9
+  },
+  "_calibration": {
+    "_what": "Where the proxy and the host disagree, measured on 2026-11-12.",
+    "pair": "cue-r-01 vs cue-python-01, same harness, same system prompt",
+    "host_step1_prompt_delta": 2,
+    "proxy_delta": 0,
+    "_read": "The proxy saw '-r-01' and '-python-01' as the same cost (both four tokens); the subject's own tokenizer charged two more for 'python'. So the proxy is a planning instrument, not a measurement. Where a run exists, use the host's step-1 prompt size (inputTokens + cacheReadTokens) instead -- and note that inputTokens alone is uncached input, which reads about 8x small on a cache hit."
+  },
+  "arms": [
+    {
+      "slot": "python-01",
+      "cue": "python",
+      "family": "lang",
+      "note": "explicit language name",
+      "path": "D:\\assay\\slots\\python-01",
+      "chars": 24,
+      "tokens": 10,
+      "cue_tokens": 1,
+      "delta_vs_shortest": 1
+    },
+    {
+      "slot": "tidyverse-01",
+      "cue": "tidyverse",
+      "family": "lang",
+      "note": "explicit package name; also a language pointer",
+      "path": "D:\\assay\\slots\\tidyverse-01",
+      "chars": 27,
+      "tokens": 11,
+      "cue_tokens": 3,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "cobden-01",
+      "cue": null,
+      "family": "lang",
+      "note": "neutral, similar token cost to python",
+      "path": "D:\\assay\\slots\\cobden-01",
+      "chars": 24,
+      "tokens": 12,
+      "cue_tokens": 0,
+      "delta_vs_shortest": 3
+    },
+    {
+      "slot": "hedgerow-01",
+      "cue": null,
+      "family": "lang",
+      "note": "neutral, similar token cost to tidyverse",
+      "path": "D:\\assay\\slots\\hedgerow-01",
+      "chars": 26,
+      "tokens": 12,
+      "cue_tokens": 0,
+      "delta_vs_shortest": 3
+    },
+    {
+      "slot": "r-01",
+      "cue": "r",
+      "family": "letter",
+      "note": "single letter; ambiguous between the language and a letter",
+      "path": "D:\\assay\\slots\\r-01",
+      "chars": 19,
+      "tokens": 9,
+      "cue_tokens": 1,
+      "delta_vs_shortest": 0
+    },
+    {
+      "slot": "q-01",
+      "cue": null,
+      "family": "letter",
+      "note": "neutral letter control at the same name length",
+      "path": "D:\\assay\\slots\\q-01",
+      "chars": 19,
+      "tokens": 10,
+      "cue_tokens": 0,
+      "delta_vs_shortest": 1
+    }
+  ]
+}

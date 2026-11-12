@@ -82,6 +82,20 @@ def path_delivered(path: str | None, texts: list[str]) -> bool:
     return any(target in re.sub(r"[\\/]+", r"\\", t).lower() for t in texts)
 
 
+# Any absolute path a message spelled out, whatever put it there. Generic on purpose: the
+# host injects the working directory itself, so a study that varies paths needs to know
+# which ones arrived, and cannot learn it from run.json.
+ABS_PATH = re.compile(r"[A-Za-z]:[\\/][^\s\"'<>|?*\n]*")
+
+
+def paths_in(texts: list[str]) -> list[str]:
+    found = set()
+    for t in texts:
+        for hit in ABS_PATH.findall(t):
+            found.add(re.sub(r"[\\/]+", r"\\", hit.rstrip(".,;:)")))
+    return sorted(found)
+
+
 def read_jsonl(path: pathlib.Path) -> list[dict]:
     if not path.exists():
         return []
@@ -234,6 +248,9 @@ def index_run(run_dir: pathlib.Path) -> list[dict]:
                 # if false, varying the workspace path changes nothing observable in the prompt.
                 "cwd_injected": path_delivered(cwd, texts),
                 "messages_mention_cwd": sum(1 for t in texts if path_delivered(cwd, [t])),
+                # Every absolute path that arrived, including ones we never set -- the
+                # operator's own working directory reaches the subject this way.
+                "paths_delivered": paths_in(texts),
             },
 
             "observed": {

@@ -116,6 +116,30 @@ enforce *reported precision*, so the Welch p-value answered as `0.0832` — thre
 where four were asked for — still lands at `4.7e-4` and passes. v2 of the criteria would
 need a digit-count rule on the answer's literal text; v1 records the gap.
 
+## What the operator leaks into every trial
+
+The host injects a working-directory notice naming **two** paths — the destination and the
+one it came from:
+
+```
+The working directory changed from "D:\RDirectory\harness-assay" to "D:\assay\slots\opB-01".
+```
+
+The "from" side is the operator's directory, and it is **not** the live working directory.
+Changing the session's cwd and re-running changed nothing: six runs issued half from
+`D:\workdir\harness-assay` recorded the same parent path 6/6. It is a per-session constant.
+
+What that cost, measured on 2026-11-12: those six runs had identical delivered context —
+step-1 prompt size `1886` tokens in every one — yet the naive arm-vs-arm comparison
+reported a **+14.4% wall-time difference**. The verdict was noise, and only the record's
+own step-1 accounting could show it.
+
+Two consequences for any study here:
+
+- the operator path is a **constant to declare**, not a variable to control;
+- `RDirectory` is an R-flavoured token sitting in the context of every trial of a session
+  rooted there. A study of language cues must either declare it or run from elsewhere.
+
 ## Running it
 
 ```bash
