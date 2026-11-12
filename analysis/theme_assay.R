@@ -29,48 +29,75 @@
 suppressPackageStartupMessages(library(ggplot2))
 
 # ---- 字体事实：本机已装 Segoe UI / Consolas；家族上限 2，按角色分工 ----------
-ASSAY_FONT <- "Segoe UI"    # 标题、正文
-ASSAY_MONO <- "Consolas"    # 数字与标签，让"数据"和"话语"分开
+ASSAY_FONT <- "Segoe UI" # 标题、正文
+ASSAY_MONO <- "Consolas" # 数字与标签，让"数据"和"话语"分开
 
 # 阶梯单调递减且相邻可辨。全图出现的字号种类不得超过 length(ASSAY_TYPE)。
-ASSAY_TYPE <- c(title = 16, subtitle = 12, axis_title = 10.5,
-                axis_text = 9, annot = 8, caption = 7.5)
-ASSAY_TYPE_MAX   <- length(ASSAY_TYPE)
+ASSAY_TYPE <- c(
+  title = 16,
+  subtitle = 12,
+  axis_title = 10.5,
+  axis_text = 9,
+  annot = 8,
+  caption = 7.5
+)
+ASSAY_TYPE_MAX <- length(ASSAY_TYPE)
 ASSAY_FAMILY_MAX <- 2L
-ASSAY_CAPTION_WIDTH <- 96   # 脚注折行宽度：超过会被画布右缘裁掉，踩过
+ASSAY_CAPTION_WIDTH <- 96 # 脚注折行宽度：超过会被画布右缘裁掉，踩过
 
 # 导出必须显式给宽高与 dpi，不依赖默认值；bg 与主题底色一致。
 ASSAY_EXPORT <- list(dpi = 240, bg = "#FFFFFF")
 
 # ---- 主题工厂 ---------------------------------------------------------------
-assay_theme <- function(ink = "#141414", body = "#4A4A4A", grid = "#E6E6E6",
-                        scale = 1) {
+assay_theme <- function(
+  ink = "#141414",
+  body = "#4A4A4A",
+  grid = "#E6E6E6",
+  scale = 1
+) {
   ty <- ASSAY_TYPE * scale
   theme_minimal(base_size = ty[["axis_title"]], base_family = ASSAY_FONT) +
     theme(
-      plot.background       = element_rect(fill = ASSAY_EXPORT$bg, colour = NA),
-      panel.background      = element_rect(fill = ASSAY_EXPORT$bg, colour = NA),
-      plot.title.position   = "plot",
+      plot.background = element_rect(fill = ASSAY_EXPORT$bg, colour = NA),
+      panel.background = element_rect(fill = ASSAY_EXPORT$bg, colour = NA),
+      plot.title.position = "plot",
       plot.caption.position = "plot",
-      plot.title    = element_text(colour = ink, face = "bold", size = ty[["title"]],
-                                   hjust = 0, margin = margin(b = 4)),
-      plot.subtitle = element_text(colour = body, size = ty[["subtitle"]], hjust = 0,
-                                   margin = margin(b = 14)),
-      plot.caption  = element_text(colour = body, size = ty[["caption"]], hjust = 0,
-                                   margin = margin(t = 12)),
-      text          = element_text(colour = body, size = ty[["axis_text"]]),
-      axis.title    = element_text(colour = body, size = ty[["axis_title"]]),
-      axis.text     = element_text(colour = body, size = ty[["axis_text"]]),
-      legend.position      = "top",
+      plot.title = element_text(
+        colour = ink,
+        face = "bold",
+        size = ty[["title"]],
+        hjust = 0,
+        margin = margin(b = 4)
+      ),
+      plot.subtitle = element_text(
+        colour = body,
+        size = ty[["subtitle"]],
+        hjust = 0,
+        margin = margin(b = 14)
+      ),
+      plot.caption = element_text(
+        colour = body,
+        size = ty[["caption"]],
+        hjust = 0,
+        margin = margin(t = 12)
+      ),
+      text = element_text(colour = body, size = ty[["axis_text"]]),
+      axis.title = element_text(colour = body, size = ty[["axis_title"]]),
+      axis.text = element_text(colour = body, size = ty[["axis_text"]]),
+      legend.position = "top",
       legend.justification = "left",
-      legend.title         = element_blank(),
-      legend.text          = element_text(size = ty[["annot"]]),
-      strip.text   = element_text(colour = ink, face = "bold", size = ty[["axis_title"]],
-                                  hjust = 0),
-      panel.grid.minor   = element_blank(),
-      panel.grid.major   = element_line(colour = grid, linewidth = 0.3),
-      panel.spacing      = unit(1.4, "lines"),
-      plot.margin        = margin(16, 20, 12, 16)
+      legend.title = element_blank(),
+      legend.text = element_text(size = ty[["annot"]]),
+      strip.text = element_text(
+        colour = ink,
+        face = "bold",
+        size = ty[["axis_title"]],
+        hjust = 0
+      ),
+      panel.grid.minor = element_blank(),
+      panel.grid.major = element_line(colour = grid, linewidth = 0.3),
+      panel.spacing = unit(1.4, "lines"),
+      plot.margin = margin(16, 20, 12, 16)
     )
 }
 
@@ -82,14 +109,22 @@ assay_mono <- function(...) element_text(family = ASSAY_MONO, ...)
 # 一个不属于本图的差额写进去，读者会去找那 42 条被"少画"的点。
 assay_flow <- function(raw, kept, ...) {
   why <- unlist(list(...))
-  sprintf("raw %d -> plotted %d%s", raw, kept,
-          if (length(why)) paste0(" (", paste(why, collapse = "; "), ")") else "")
+  sprintf(
+    "raw %d -> plotted %d%s",
+    raw,
+    kept,
+    if (length(why)) paste0(" (", paste(why, collapse = "; "), ")") else ""
+  )
 }
 
 # 脚注：来源 + 样本量，两行封顶，固定折行宽度（超过会被画布右缘裁掉，踩过）。
 # 刻意不接受 note —— 需要解释的东西属于副标题，不属于脚注。
 assay_source <- function(what, n = NULL, width = ASSAY_CAPTION_WIDTH) {
-  parts <- paste0("Source: ", what, if (!is.null(n)) paste0("  \u00b7  n = ", n) else "")
+  parts <- paste0(
+    "Source: ",
+    what,
+    if (!is.null(n)) paste0("  \u00b7  n = ", n) else ""
+  )
   paste(strwrap(parts, width = width), collapse = "\n")
 }
 
@@ -101,19 +136,30 @@ assay_audit <- function(p, allowed = ASSAY_TYPE, tol = 0.05) {
     keep(\(e) inherits(e, "element_text")) |>
     imap(\(e, nm) {
       sz <- e$size
-      if (is.null(sz) || inherits(sz, "rel")) sz <- NA_real_ else sz <- as.numeric(sz)
+      if (is.null(sz) || inherits(sz, "rel")) {
+        sz <- NA_real_
+      } else {
+        sz <- as.numeric(sz)
+      }
       tibble::tibble(
         element = nm,
-        size    = sz,
-        family  = if (is.null(e$family)) NA_character_ else as.character(e$family)
+        size = sz,
+        family = if (is.null(e$family)) {
+          NA_character_
+        } else {
+          as.character(e$family)
+        }
       )
     }) |>
     list_rbind()
 
-  if (nrow(rows) == 0) return(rows)
+  if (nrow(rows) == 0) {
+    return(rows)
+  }
   rows |>
     dplyr::mutate(
-      in_ladder = is.na(size) | vapply(size, \(s) any(abs(s - allowed) < tol), logical(1))
+      in_ladder = is.na(size) |
+        vapply(size, \(s) any(abs(s - allowed) < tol), logical(1))
     ) |>
     dplyr::arrange(element)
 }
@@ -121,8 +167,15 @@ assay_audit <- function(p, allowed = ASSAY_TYPE, tol = 0.05) {
 assay_audit_ok <- function(p) {
   a <- assay_audit(p)
   n_sizes <- length(unique(stats::na.omit(a$size)))
-  n_fams  <- length(unique(stats::na.omit(a$family)))
-  ok <- all(a$in_ladder) && n_sizes <= ASSAY_TYPE_MAX && n_fams <= ASSAY_FAMILY_MAX
-  list(ok = ok, sizes = n_sizes, families = n_fams, table = a,
-       off_ladder = a |> dplyr::filter(!in_ladder))
+  n_fams <- length(unique(stats::na.omit(a$family)))
+  ok <- all(a$in_ladder) &&
+    n_sizes <= ASSAY_TYPE_MAX &&
+    n_fams <= ASSAY_FAMILY_MAX
+  list(
+    ok = ok,
+    sizes = n_sizes,
+    families = n_fams,
+    table = a,
+    off_ladder = a |> dplyr::filter(!in_ladder)
+  )
 }

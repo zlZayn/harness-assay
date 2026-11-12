@@ -29,16 +29,26 @@ suppressPackageStartupMessages({
 })
 
 INDEX <- "records/index.jsonl"
-OUT   <- "records/tables"
+OUT <- "records/tables"
 
 # ==============================================================================
 # 1. Read
 # ==============================================================================
 
-chr <- function(x) if (is.null(x) || length(x) == 0) NA_character_ else as.character(x)[1]
-num <- function(x) if (is.null(x) || length(x) == 0) NA_real_ else as.numeric(x)[1]
+chr <- function(x) {
+  if (is.null(x) || length(x) == 0) NA_character_ else as.character(x)[1]
+}
+num <- function(x) {
+  if (is.null(x) || length(x) == 0) NA_real_ else as.numeric(x)[1]
+}
 lgl <- function(x) if (is.null(x) || length(x) == 0) NA else as.logical(x)[1]
-join_chr <- function(x) if (is.null(x) || length(x) == 0) NA_character_ else paste(unlist(x), collapse = ",")
+join_chr <- function(x) {
+  if (is.null(x) || length(x) == 0) {
+    NA_character_
+  } else {
+    paste(unlist(x), collapse = ",")
+  }
+}
 
 records <- readLines(INDEX, warn = FALSE, encoding = "UTF-8") |>
   keep(\(l) nzchar(trimws(l))) |>
@@ -65,63 +75,66 @@ observations <- records |>
 
     tibble(
       # --- identity of the measurement ---
-      run_id          = chr(r$run_id),
-      trial           = num(r$trial),
-      task_id         = chr(r$task_id),
-      record_schema   = num(r$record_schema),
+      run_id = chr(r$run_id),
+      trial = num(r$trial),
+      task_id = chr(r$task_id),
+      record_schema = num(r$record_schema),
 
       # --- which experiment, which spec ---
-      stimulus_id     = chr(r$stimulus_id),
-      input_id        = chr(r$input_id),
-      stimulus_ok     = !isTRUE(r$stimulus_unavailable),
+      stimulus_id = chr(r$stimulus_id),
+      input_id = chr(r$input_id),
+      stimulus_ok = !isTRUE(r$stimulus_unavailable),
 
       # --- provenance: what the operator supplied ---
-      harness_sha     = chr(i$harness_sha),
-      sealed          = lgl(i$sealed),
-      max_depth       = num(i$max_depth),
+      harness_sha = chr(i$harness_sha),
+      sealed = lgl(i$sealed),
+      max_depth = num(i$max_depth),
       task_prompt_sha = chr(i$task_prompt_sha),
-      schema_sha      = chr(i$output_schema_sha),
+      schema_sha = chr(i$output_schema_sha),
 
       # --- workspace: an input, until it reaches the subject ---
-      cwd             = chr(i$cwd),
-      ws_name         = chr(w$cwd_name),
-      ws_parent       = chr(w$cwd_parent),
-      cwd_injected    = lgl(w$cwd_injected),
-      cwd_mentions    = num(w$messages_mention_cwd),
+      cwd = chr(i$cwd),
+      ws_name = chr(w$cwd_name),
+      ws_parent = chr(w$cwd_parent),
+      cwd_injected = lgl(w$cwd_injected),
+      cwd_mentions = num(w$messages_mention_cwd),
 
       # --- delivered: what the subject actually received ---
-      sys_sha         = chr(st$sha),
-      sys_chars       = num(st$chars),
-      tools_sha       = chr(tl$sha),
-      tools_count     = num(tl$count),
-      tools_names     = join_chr(tl$names),
-      msgs_sha        = chr(ms$sha),
-      msgs_count      = num(ms$count),
-      msg_kinds       = join_chr(ms$kinds),
-      route_provider  = chr(or$provider),
-      route_model     = chr(or$model),
-      route_effort    = chr(or$reasoningEffort),
+      sys_sha = chr(st$sha),
+      sys_chars = num(st$chars),
+      tools_sha = chr(tl$sha),
+      tools_count = num(tl$count),
+      tools_names = join_chr(tl$names),
+      msgs_sha = chr(ms$sha),
+      msgs_count = num(ms$count),
+      msg_kinds = join_chr(ms$kinds),
+      route_provider = chr(or$provider),
+      route_model = chr(or$model),
+      route_effort = chr(or$reasoningEffort),
       route_maxTokens = num(or$maxTokens),
 
       # --- outcome: what happened, untouched ---
-      stop_reason     = chr(o$stop_reason),
-      timed_out       = lgl(o$timed_out),
-      wall_ms         = num(o$wall_ms),
-      steps           = num(o$steps),
-      tool_calls      = num(tr$toolCalls),
-      tool_errors     = num(tr$toolErrors),
-      in_uncached     = num(tu$uncachedInputTokens),
-      in_cache_read   = num(tu$cacheReadTokens),
+      stop_reason = chr(o$stop_reason),
+      timed_out = lgl(o$timed_out),
+      wall_ms = num(o$wall_ms),
+      steps = num(o$steps),
+      tool_calls = num(tr$toolCalls),
+      tool_errors = num(tr$toolErrors),
+      in_uncached = num(tu$uncachedInputTokens),
+      in_cache_read = num(tu$cacheReadTokens),
       # Prompt cache splits the same input two ways; the sum is the honest input size.
-      in_total        = num(tu$uncachedInputTokens) + num(tu$cacheReadTokens),
-      out_tokens      = num(tu$outputTokens),
-      answer_json     = if (is.null(o$structured)) NA_character_
-                        # digits = NA keeps every digit. jsonlite::toJSON defaults to
-                        # digits = 4, which silently rounds an answer on its way into
-                        # this table: invisible while the answers happened to carry four
-                        # significant digits, fatal on a task that asks for six. The
-                        # record is right either way; this file was the liar.
-                        else as.character(toJSON(o$structured, auto_unbox = TRUE, digits = NA))
+      in_total = num(tu$uncachedInputTokens) + num(tu$cacheReadTokens),
+      out_tokens = num(tu$outputTokens),
+      answer_json = if (is.null(o$structured)) {
+        NA_character_
+      } else {
+        # digits = NA keeps every digit. jsonlite::toJSON defaults to
+        # digits = 4, which silently rounds an answer on its way into
+        # this table: invisible while the answers happened to carry four
+        # significant digits, fatal on a task that asks for six. The
+        # record is right either way; this file was the liar.
+        as.character(toJSON(o$structured, auto_unbox = TRUE, digits = NA))
+      }
     )
   }) |>
   list_rbind()
@@ -139,16 +152,18 @@ observations <- records |>
 calls <- records |>
   map(\(r) {
     cl <- r$observed$tool_calls
-    if (is.null(cl) || length(cl) == 0) return(NULL)
+    if (is.null(cl) || length(cl) == 0) {
+      return(NULL)
+    }
     tibble(
-      run_id      = chr(r$run_id),
+      run_id = chr(r$run_id),
       stimulus_id = chr(r$stimulus_id),
-      ws_name     = chr(r$workspace$cwd_name),
-      step        = map_dbl(cl, \(c) num(c$step)),
-      name        = map_chr(cl, \(c) chr(c$name)),
-      args        = map_chr(cl, \(c) chr(c$args)),
-      args_chars  = map_dbl(cl, \(c) num(c$args_chars)),
-      error       = map_lgl(cl, \(c) isTRUE(c$error))
+      ws_name = chr(r$workspace$cwd_name),
+      step = map_dbl(cl, \(c) num(c$step)),
+      name = map_chr(cl, \(c) chr(c$name)),
+      args = map_chr(cl, \(c) chr(c$args)),
+      args_chars = map_dbl(cl, \(c) num(c$args_chars)),
+      error = map_lgl(cl, \(c) isTRUE(c$error))
     )
   }) |>
   list_rbind()
@@ -161,21 +176,21 @@ conditions <- observations |>
   group_by(stimulus_id) |>
   summarise(
     # delivered attributes are constant within a stimulus_id by construction
-    sys_sha         = first(sys_sha),
-    sys_chars       = first(sys_chars),
-    tools_sha       = first(tools_sha),
-    tools_count     = first(tools_count),
-    tools_names     = first(tools_names),
-    msgs_sha        = first(msgs_sha),
-    msgs_count      = first(msgs_count),
-    msg_kinds       = first(msg_kinds),
-    route_provider  = first(route_provider),
-    route_model     = first(route_model),
-    route_effort    = first(route_effort),
+    sys_sha = first(sys_sha),
+    sys_chars = first(sys_chars),
+    tools_sha = first(tools_sha),
+    tools_count = first(tools_count),
+    tools_names = first(tools_names),
+    msgs_sha = first(msgs_sha),
+    msgs_count = first(msgs_count),
+    msg_kinds = first(msg_kinds),
+    route_provider = first(route_provider),
+    route_model = first(route_model),
+    route_effort = first(route_effort),
     # how many efforts produced this one condition
-    n_trials        = n(),
-    n_runs          = n_distinct(run_id),
-    n_inputs        = n_distinct(input_id),
+    n_trials = n(),
+    n_runs = n_distinct(run_id),
+    n_inputs = n_distinct(input_id),
     .groups = "drop"
   ) |>
   arrange(stimulus_id)
@@ -186,15 +201,18 @@ conditions <- observations |>
 
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 write_csv(observations, file.path(OUT, "observations.csv"))
-write_csv(conditions,   file.path(OUT, "conditions.csv"))
-write_csv(calls,        file.path(OUT, "calls.csv"))
+write_csv(conditions, file.path(OUT, "conditions.csv"))
+write_csv(calls, file.path(OUT, "calls.csv"))
 
 unavailable <- sum(!observations$stimulus_ok)
 
 cat(sprintf("observations : %d rows\n", nrow(observations)))
 cat(sprintf("conditions   : %d rows\n", nrow(conditions)))
-cat(sprintf("calls        : %d rows (%d with an error flag)\n",
-            nrow(calls), sum(calls$error)))
+cat(sprintf(
+  "calls        : %d rows (%d with an error flag)\n",
+  nrow(calls),
+  sum(calls$error)
+))
 cat(sprintf("unavailable  : %d trial(s) with no events.jsonl\n", unavailable))
 cat("\n")
 
@@ -217,8 +235,15 @@ cat("call-count check -- every counted call has a row\n")
 cat("\n")
 
 conditions |>
-  select(stimulus_id, sys_sha, tools_sha, msgs_sha,
-         n_trials, n_runs, n_inputs) |>
+  select(
+    stimulus_id,
+    sys_sha,
+    tools_sha,
+    msgs_sha,
+    n_trials,
+    n_runs,
+    n_inputs
+  ) |>
   print(n = Inf, width = 120)
 
 cat("\n")
@@ -240,37 +265,59 @@ conditions |>
 cat("\n")
 cat("round-trip check -- answer_json must reproduce the record exactly:\n")
 
-answers <- function(txt) tryCatch(fromJSON(txt, simplifyVector = FALSE),
-                                  error = function(e) NULL)
+answers <- function(txt) {
+  tryCatch(fromJSON(txt, simplifyVector = FALSE), error = function(e) NULL)
+}
 
 stopifnot(nrow(observations) == length(records))
 bad <- records |>
   map2_chr(observations$answer_json, \(r, txt) {
     orig <- r$observed$structured
-    if (is.na(txt) || is.null(orig)) return(NA_character_)
+    if (is.na(txt) || is.null(orig)) {
+      return(NA_character_)
+    }
     back <- answers(txt)
     if (is.null(back)) {
       return(sprintf("%s: answer_json does not parse", chr(r$run_id)))
     }
     hit <- keep(names(orig), \(k) {
-      a <- back[[k]]; b <- orig[[k]]
-      is.numeric(a) && is.numeric(b) &&
-        !isTRUE(all.equal(a, b, tolerance = 0))
+      a <- back[[k]]
+      b <- orig[[k]]
+      is.numeric(a) && is.numeric(b) && !isTRUE(all.equal(a, b, tolerance = 0))
     })
-    if (length(hit) == 0) return(NA_character_)
+    if (length(hit) == 0) {
+      return(NA_character_)
+    }
     k <- hit[[1]]
-    sprintf("%s: %s %s -> %s", chr(r$run_id), k,
-            format(orig[[k]], digits = 17), format(back[[k]], digits = 17))
+    sprintf(
+      "%s: %s %s -> %s",
+      chr(r$run_id),
+      k,
+      format(orig[[k]], digits = 17),
+      format(back[[k]], digits = 17)
+    )
   }) |>
   discard(is.na)
 
 if (length(bad) == 0) {
-  cat(sprintf("  ok -- %d answer(s) survived the trip unchanged\n", sum(!is.na(observations$answer_json))))
+  cat(sprintf(
+    "  ok -- %d answer(s) survived the trip unchanged\n",
+    sum(!is.na(observations$answer_json))
+  ))
 } else {
-  cat(sprintf("  %d answer(s) CHANGED between the index and this table:\n", length(bad)))
-  for (b in head(bad, 10)) cat("    ", b, "\n")
-  if (length(bad) > 10) cat(sprintf("     ... and %d more\n", length(bad) - 10))
-  cat("  A number that changes downstream makes every judgement made from this table\n")
+  cat(sprintf(
+    "  %d answer(s) CHANGED between the index and this table:\n",
+    length(bad)
+  ))
+  for (b in head(bad, 10)) {
+    cat("    ", b, "\n")
+  }
+  if (length(bad) > 10) {
+    cat(sprintf("     ... and %d more\n", length(bad) - 10))
+  }
+  cat(
+    "  A number that changes downstream makes every judgement made from this table\n"
+  )
   cat("  a statement about the rounding, not about the answer.\n")
   quit(status = 2)
 }
