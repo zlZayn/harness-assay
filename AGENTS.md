@@ -38,16 +38,17 @@ python tools/patch_host_notice.py --check
 ## 待办
 
 - [x] W5 第一批：`lang` 4 臂 × k=7 = 28 trial —— 已跑完，结论见 [依据记录](.agents/notes/2026-11-12-batch1-result.md)
-- [ ] W5 第二批：`letter` 2 臂；k 按批次 1 的实测率重算（p₁≈0.29，不是规划时的 0.4）
-- [ ] 重跑 `python`/`tidyverse` 的高 k 批次时，schema 必须按 `study/tasks/*.json` 的键序交付
+- [ ] W5 第二批：`norris-ols` 题，`r-eco` vs `placebo` 各 3 措辞 × k=8 = 48 trial —— 题/判据/prereg 已就位（`plan_id` `norris-ols-k8-93989b5a88ab`），待开跑
+- [ ] `letter` 2 臂：暂缓；k 要按第二批的实测率重算，现在定不了
 - [ ] 给 `analysis/` 一个 R 侧环境锁（`renv.lock`），当前无版本锁定
 - [ ] 补 CI 与本地钩子（L3 要求，暂缺）
 
 ## 活跃坑
 
 - 工作目录通知里的 `from` 是**会话根**，不是活的 cwd；`cd` 移不动它。想消掉只能开窗或换会话根 → [依据记录](.agents/notes/2026-11-12-operator-path-leak.md)
-- 手打两份 schema = 两份 schema。键序一变，规范哈希看不见、宿主 `toolSchemaDigest` 看得见 → [依据记录](.agents/notes/2026-11-12-batch1-result.md)
+- 手打两份 schema = 两份 schema。键序一变，规范哈希看不见、宿主 `toolSchemaDigest` 看得见；**两处都错得一模一样时只有 `declared_vs_received` 看得见** → [依据记录](.agents/notes/2026-11-12-batch1-result.md)
 - 位置效应**没有**复现：6 条上 ρ=−0.83，28 条上 ρ=+0.59。交错仍然要做，理由是"事后无法排除"，不是"已知有漂移" → [决策记录](.agents/notes/2026-11-12-run-order-confound.md)
+- **选题不许看结局**。基线率是报告对象，不是选择对象 → [DESIGN.md](study/DESIGN.md)
 - `inputTokens` 是未缓存部分，命中缓存时读数小 8 倍；记账一律 `uncached + cacheRead`。
 - harness 文件必须住 `~/.dsh/profiles/web/harness/`，裸模块名只在那里解析得到；`spec/` 里的源要同步过去。
 - 槽位目录被清空会让历史记录变成悬空引用，且没有任何代码会报错。

@@ -156,6 +156,53 @@ def delivered_by_host(rows: list[dict], recorded: dict[str, list[pathlib.Path]])
     return problems
 
 
+def declared_vs_received(rows: list[dict], recorded: dict[str, list[pathlib.Path]]) -> int:
+    """Is what each run recorded byte-identical to what the plan declared?
+
+    `delivered_by_host` compares the arms against each other, so it finds a *divergence*.
+    It cannot find a mistake made identically every time: if all 48 calls receive the same
+    mistyped prompt, the host digest is single-valued and nothing is flagged.
+
+    This closes that gap. The two checks fail on different things on purpose -- the host
+    digest sees key order and cannot see consistency; this one sees consistency and cannot
+    see key order.
+    """
+    seen = 0
+    wrong: list[str] = []
+    for row in rows:
+        for run_dir in recorded.get(row["slot"], []):
+            path = run_dir / "run.json"
+            if not path.exists():
+                continue
+            task = (json.loads(path.read_text(encoding="utf-8")).get("task") or {})
+            seen += 1
+            schema = task.get("outputSchema")
+            got = (sha(task.get("prompt") or ""),
+                   sha(canon(schema)) if schema else None)
+            want = (row["prompt_sha"], row["schema_sha"])
+            if got != want:
+                which = [n for n, a, b in (("prompt", got[0], want[0]),
+                                           ("schema", got[1], want[1])) if a != b]
+                wrong.append(f"{row['slot']} ({', '.join(which)})")
+
+    if not seen:
+        return 0
+
+    if not wrong:
+        print(f"\nprompt and schema as recorded: {seen} trial(s), all match the plan")
+        return 0
+
+    print(f"\nprompt/schema as recorded vs as declared: {len(wrong)} of {seen} disagree")
+    for name in wrong[:8]:
+        print(f"  {name}")
+    if len(wrong) > 8:
+        print(f"  ... and {len(wrong) - 8} more")
+    print("  The plan does not describe what the subject was actually asked.")
+    print("  Re-type the task from study/tasks/, or accept that this batch answers a")
+    print("  different question than the one the prereg names.")
+    return 1
+
+
 def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Path) -> int:
     """Is the board in the state the plan assumes?
 
@@ -219,6 +266,7 @@ def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Pa
         problems += 1
 
     problems += delivered_by_host(rows, recorded)
+    problems += declared_vs_received(rows, recorded)
 
     print(f"\n{len(rows)} planned: {done} done, {pending} pending, "
           f"{problems} problem(s)")

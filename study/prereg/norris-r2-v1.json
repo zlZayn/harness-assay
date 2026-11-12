@@ -1,0 +1,67 @@
+{
+  "prereg_id": "norris-r2-v1",
+  "status": "declared, not yet run",
+  "_what": "Everything that must be decided before the batch runs, written down so it cannot be decided afterwards. commit this file, then run. If any of it changes, the plan_id changes and the change is visible in history.",
+
+  "plan_id": "norris-ols-k8-93989b5a88ab",
+  "_plan_id_note": "sha of (arm table + prompt + schema + 'rep-major'). Reproduce with: python tools/batch_plan.py --task norris-ols --k 8 --family r-eco,placebo. A different k, task, arm set or order yields a different id.",
+
+  "task": "norris-ols",
+  "criteria": "study/criteria/norris-v1.json",
+  "arms": { "r-eco": ["dplyr", "ggplot", "tidyr"], "placebo": ["marlow", "fenwick", "orwell"] },
+  "k_per_arm": 8,
+  "trials": 48,
+  "order": "rep-major (one replicate of every arm, then the next)",
+
+  "_why_these_arms": "Each condition gets three wordings, so the conclusion is about the category rather than about one lucky string (study/DESIGN.md section 5). The placebo wordings cost 11 tokens each on the arm table, exactly what the R-ecosystem wordings cost, so the contrast is not a length contrast.",
+
+  "_why_no_python_arm": "The python-cue arm is dropped from this batch. Batch 1 found it pinned at its ceiling (7/7), where its contrast carries almost no information, and the estimand this batch is sized for is the R-side lift. Consequence: the two-direction reading (study/DESIGN.md section 3) is not available from this batch, and delta is reported for the R direction only.",
+
+  "analysis": {
+    "outcome": "Y = the first tool call in the trial whose arguments name a runtime, reduced to {R, python, shell, none}",
+    "classification": "study/interpreters.json, unchanged since batch 1",
+    "primary": {
+      "contrast": "P(Y=R | r-eco) - P(Y=R | placebo)",
+      "pooled_over": "the three wordings of each condition",
+      "test": "one-sided Fisher exact, alpha 0.05",
+      "conditional_on": "nothing -- shell and none count as 'not R'"
+    },
+    "secondary": [
+      "per-wording rates (descriptive; three wordings cannot support a formal random-effects test)",
+      "zero-tool-call rate per condition -- an instrument reading, not a cue effect",
+      "shell-only rate per condition",
+      "mixed trials (more than one runtime seen in a trial)",
+      "correctness: how many of the six quantities land inside study/criteria/norris-v1.json"
+    ],
+    "_not_analysed": "No cue-vs-cue contrast, no stratification on 'used a runtime at all', no attempt to exclude trials by outcome -- all three are post-treatment moves (study/DESIGN.md section 2)."
+  },
+
+  "power_analysis": {
+    "_kind": "assumption, declared in advance; no outcome data was read to produce it",
+    "p0_assumed": 0.10,
+    "p1_assumed": 0.40,
+    "n_per_condition": 24,
+    "critical_count": 8,
+    "power": 0.81,
+    "sensitivity": {
+      "p1=0.30": 0.44,
+      "p1=0.50": 0.97,
+      "if p0 were 0.00": 0.99,
+      "if p0 were 0.20": 0.21
+    },
+    "_honest_reading": "The design is well powered for a 0.10 -> 0.40 shift and poorly powered for anything smaller. It is also sensitive to the assumed baseline: if R turns out to be the default more often than assumed, this batch cannot detect the effect. That is the cost of fixing k in advance, and it is paid deliberately rather than recovered by adding trials after seeing the data."
+  },
+
+  "decision_rules": {
+    "_why": "Stated now so they are rules about the instrument, not exclusions chosen after seeing results.",
+    "zero_tool_call_rate_above_1_in_3": "The task is memorised rather than computed. Mark this batch exploratory, do not report a cue effect, and switch dataset. The trials are NOT removed from the analysis -- they count as 'not R'.",
+    "runtime_use_rate_below_2_in_3": "The contrast is diluted (not biased). Report it and say the effective sample is smaller than 48.",
+    "no_interim_looks": "k is fixed at 8. No peeking-then-extending. If the batch must be extended, that is a new prereg with a new plan_id, reported as a separate batch.",
+    "mixed_trials": "Counted by first runtime; the mixed count is always reported beside the primary table.",
+    "deviation": "Any departure from this file is recorded in a note under .agents/notes/ with the reason, at the time it happens."
+  },
+
+  "_what_would_falsify_the_hypothesis": "P(Y=R | r-eco) not above P(Y=R | placebo), with the per-wording rates also flat. A result in the hypothesised direction but inside the power curve's blind spot is reported as 'not established', not as weak support.",
+
+  "_known_limitation": "Single model route. The corpus prior for Python cannot be separated from the cue within one model (study/DESIGN.md section 10). This batch does not fix that; it is recorded as outstanding."
+}

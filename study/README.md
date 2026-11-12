@@ -9,6 +9,7 @@
 | 路径 | 是什么 | 谁读 |
 |---|---|---|
 | `DESIGN.md` | 统计设计：估计量、三条禁忌、量程受限、预注册 | 人；改设计前必读 |
+| `prereg/<id>.json` | 开跑前写死：题、臂、措辞、k、对比、判定规则、`plan_id` | 人；跑批前必读，跑完必对照 |
 | `expectations.json` | 已知识别关系的断言对（折叠 / 分开） | `tools/verify_index.py` |
 | `criteria/<ver>.json` | 真值、容差、以及容差自己的已知漏洞 | `tools/grade.py` |
 | `cue-arms.json` | 臂表：按实测 token 声明，含切分器与版本 | `tools/batch_plan.py`、`analysis/cue_tokens.py` |
@@ -26,7 +27,8 @@
 ## 变更影响路由
 
 - 改 `DESIGN.md` 的估计量或禁忌 → 等于换实验；旧 run 仍可比但旧**结论**不再适用，要另写依据记录。
-- 改 `criteria/*.json` → 用新 `criteria_id`；旧判定留在 `records/judgment/`，不覆盖。
+- 改 `prereg/*.json` 或它声明的任何一个输入（题、臂表、顺序、k）→ `plan_id` 变；旧 prereg 就是一份新声明，不能原地改，另开一个文件。
+- 改 `criteria/*.json` → 用新 `criteria_id`；旧判定留在 `records/judgment/`，不覆盖。容差从严收紧会让旧答案翻面，这是正常的，但要在 `known_limits` 里说清。
 - 改 `tasks/*.json` 的题面或 schema → 视为新任务，旧 run 不再与之可比；`batch_plan` 的 `prompt_sha` / `schema_sha` 会变。
 - 改 `ws-template/` → `template_tree_sha` 变，此前所有槽位与该模板不再同源。
 - 改 `lexicon.json` → 重跑 `exposure_check`，历史 run 的判定可能翻面。
