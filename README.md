@@ -15,6 +15,8 @@ A run is observed once. Judgement criteria drift. A later reader has only the re
 
 当前研究：[workspace-name-cue](studies/workspace-name-cue/) — 工作目录名里的一个词，会不会改变 agent 挑哪个运行时。
 
+**想直接读结论**：[研究报告](studies/workspace-name-cue/REPORT.html)（自包含 HTML，图已内嵌，离线可看）。
+
 ## 快速开始
 
 需要 DSH 与 [`dsh-harness-dispatcher`](https://github.com/dsh-plugin-lab/dsh-harness-dispatcher) 产出的 run 记录。

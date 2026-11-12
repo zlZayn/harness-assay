@@ -62,6 +62,7 @@ python tools/patch_host_notice.py --check
 - 架构与约束 → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - 研究组织规则、如何加第二个研究 → [studies/README.md](studies/README.md)
 - 当前研究：问题是、结论、文件、怎么跑 → [studies/workspace-name-cue/](studies/workspace-name-cue/)
+- 当前研究的完整叙述（给人读，自包含 HTML） → [REPORT.html](studies/workspace-name-cue/REPORT.html)；源在 [REPORT.qmd](studies/workspace-name-cue/REPORT.qmd)
 - 记录层手册 → [tools/README.md](tools/README.md)
 - 分析层手册 → [analysis/README.md](analysis/README.md)
 - 仪器层决定与依据 → [.agents/notes/](.agents/notes/)

@@ -13,7 +13,7 @@
 
 两边**都是软件项目名**，所以"像不像软件项目"被固定住，只有"是不是 R"在变。区间 [+0.153, +0.389]，六个 block 全部同向，零工具调用 0/288（不是在背答案）。
 
-**这条提升里有一部分是"试一下"，不是"改用"。** 61 条首用 R 的 trial 中 26 条同时点了 python，而 202 条首用 python 的里只有 1 条回头用 R。按条件：`r-eco` 26/72、`plain` 16/72、`software` 11/72、`py-eco` 4/72。所以主结论应读成"cue 把 R 提进了候选"，不是"cue 把语言换掉了"；两者的区别见 [fig-mixed](../../records/workspace-name-cue/figures/fig-mixed.png)。
+**这条提升里有一部分是"试一下"，不是"改用"。** 以 R 开头的 61 条 trial 里，**56 条（92%）**同时用了 python；而以 python 开头的 202 条里，只有 **1 条**回头用 R。按条件看混用率：`r-eco` 26/72、`plain` 16/72、`software` 11/72、`py-eco` 4/72。所以主结论应读成"cue 把 R 加进了候选"，不是"cue 把语言换掉了"；两者的区别见 [fig-mixed](../../records/workspace-name-cue/figures/fig-mixed.png)。
 
 六对 pairwise 已补齐（[`cue_effect.py`](analysis/cue_effect.py) §3b）。`r-eco vs py-eco` 在 `P(Y=R)` 上是 +0.3611，p < 0.0001（43/2704156），所以效应不是"软件味"带来的。完整依据、两次仪器故障、以及这批数据管不住什么 → [notes/2026-11-12-cue-effect-result.md](notes/2026-11-12-cue-effect-result.md)。
 
@@ -28,6 +28,8 @@
 | 路径 | 是什么 | 谁读 |
 |---|---|---|
 | `study.json` | 清单：这个研究的 arms / tasks / template / 各声明文件在哪。**通用工具只认这个形状** | `tools/batch_plan.py`、`workspace.py`、两个 audit |
+| [`REPORT.qmd`](REPORT.qmd) | **给人读的完整叙述**：问题、怎么做的、怎么保证干净、结果、局限、结论。不含代码 | 人；先读这个 |
+| [`REPORT.html`](REPORT.html) | 上者的渲染产物，自包含（图内嵌、无 CDN），离线可看 | 人；分享用 |
 | [`DESIGN.md`](DESIGN.md) | 统计设计：估计量、三条禁忌、量程受限、容差推导 | 人；改设计前必读 |
 | `arms.json` | 臂表：按实测 token 声明，含切分器与版本 | `batch_plan`、`cue_tokens` |
 | `conditions.json` | 四条件 × 12 措辞，每条路径恰好 11 token | `cue_tokens.py`、`cue_effect.py`、`cue_tables.R` |
@@ -76,7 +78,10 @@ Rscript analysis/index_tables.R                          # 仪器层三张表
 Rscript studies/workspace-name-cue/analysis/cue_tables.R # 本研究的 trials.csv
 python  studies/workspace-name-cue/analysis/cue_effect.py
 Rscript studies/workspace-name-cue/analysis/cue_report.R
+cd studies/workspace-name-cue && quarto render REPORT.qmd   # 叙述报告，需先有 figures
 ```
+
+`REPORT.qmd` 里的图指向 `../../records/.../figures/*.png`，所以 **必须在 `cue_report.R` 之后渲染**；渲染结果 `REPORT.html` 把图内嵌成 base64，离开仓库也打得开。文档里不用 LaTeX（`html-math-method: plain`），否则默认会从 CDN 拉 MathJax，离线时公式不渲染。
 
 产物分工：`records/index.jsonl` 与 `records/tables/*.csv` 是**仪器级**（覆盖这台机器上所有 run）；`records/workspace-name-cue/` 下才是**本研究**的 plan、judgment、ws、`trials.csv`、figures。
 

@@ -669,7 +669,7 @@ p_mix <- by_cond_rt |>
   ) +
   coord_cartesian(xlim = c(0, 1.40), clip = "off") +
   labs(
-    title = "The R lift is real but a third of it comes with python alongside",
+    title = "R arrives as an extra step; python arrives alone",
     subtitle = "Bars: first runtime named, per condition's 72 trials. Right column: trials that named a second runtime.",
     x = "share of the condition's trials",
     y = NULL,
