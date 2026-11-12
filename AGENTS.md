@@ -57,6 +57,7 @@ python tools/patch_host_notice.py --check
 
 - 用户入口 → [README.md](README.md)
 - 架构与约束 → [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- 统计设计（估计量、禁忌、预注册）→ [study/DESIGN.md](study/DESIGN.md)
 - 记录层手册 → [tools/README.md](tools/README.md)
 - 分析层手册 → [analysis/README.md](analysis/README.md)
 - 研究声明 → [study/README.md](study/README.md)

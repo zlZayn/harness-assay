@@ -1,6 +1,6 @@
 # harness-assay 架构说明
 
-本文只写不变的设计与约束（为什么）。文件级职责见各目录 `README.md`，规则见各 `AGENTS.md`。
+本文只写不变的设计与约束（为什么）。文件级职责见各目录 `README.md`，规则见各 `AGENTS.md`，统计口径见 [study/DESIGN.md](../study/DESIGN.md)。
 
 ## 目标
 
