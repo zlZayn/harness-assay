@@ -226,7 +226,9 @@ p_contrast <- by_wording |>
     inherit.aes = FALSE, linewidth = 1.6, colour = "grey78",
     lineend = "round"
   ) +
-  geom_point(aes(colour = condition), size = 1.9, alpha = 0.85,
+  # alpha 低是有原因的：同一措辞的六次重复常常落在同一个值上，点会叠在一起。
+  # 透明一点，重叠就显示成更深的颜色，密度自己浮出来，而不是被一个实心点盖住。
+  geom_point(aes(colour = condition), size = 1.9, alpha = 0.55,
              position = position_jitter(height = 0.10, width = 0, seed = 1)) +
   geom_point(data = means, aes(fill = condition), shape = 21, size = 4.4,
              colour = "white", stroke = 1.1) +
