@@ -13,7 +13,7 @@
 
 两边**都是软件项目名**，所以"像不像软件项目"被固定住，只有"是不是 R"在变。区间 [+0.153, +0.389]，六个 block 全部同向，零工具调用 0/288（不是在背答案）。
 
-**这条提升里有一部分是"试一下"，不是"改用"。** 以 R 开头的 61 条 trial 里，**56 条（92%）**同时用了 python；而以 python 开头的 202 条里，只有 **1 条**回头用 R。按条件看混用率：`r-eco` 26/72、`plain` 16/72、`software` 11/72、`py-eco` 4/72。所以主结论应读成"cue 把 R 加进了候选"，不是"cue 把语言换掉了"；两者的区别见 [fig-mixed](../../records/workspace-name-cue/figures/fig-mixed.png)。
+**这条提升是"试一下"，不是"改用"。** 288 次里"点名了 R 却没点名 Python"只有 **5 次**，且全部在 `r-eco` 组；以 R 开头的 61 条里 56 条（92%）随后又点名了 Python，而以 Python 开头的 202 条里只有 1 条（0.5%）回头点名 R。所以主结论应读成"cue 把 R 加进了候选"，不是"cue 把语言换掉了"，见 [fig-mixed](../../records/workspace-name-cue/figures/fig-mixed.png)。按条件算的混用率（`r-eco` 26/72 等）不能回答这个问题：它同时取决于该组有多少次先用了 R。
 
 六对 pairwise 已补齐（[`cue_effect.py`](analysis/cue_effect.py) §3b）。`r-eco vs py-eco` 在 `P(Y=R)` 上是 +0.3611，p < 0.0001（43/2704156），所以效应不是"软件味"带来的。完整依据、两次仪器故障、以及这批数据管不住什么 → [notes/2026-11-12-cue-effect-result.md](notes/2026-11-12-cue-effect-result.md)。
 
@@ -65,7 +65,7 @@
 | `fig-contrast` | 差多少：四条件同一 0–1 轴，点=一个措辞，粗点=条件均值，灰条=95% bootstrap |
 | `fig-rank` | 是类别还是一个名字：24 个措辞排序 + 各自 Wilson 95% 区间（**假设 6 次重复独立**，若相关则区间更宽） |
 | `fig-blocks` | 是不是某一批碰巧：六个 block 的哑铃，方向全部同向 |
-| `fig-mixed` | 提升是"改用"还是"试一下"：首次运行构成 + 混用比例同轴 |
+| `fig-mixed` | 提升是"改用"还是"试一下"：每个试次点名过的运行时组合，按四组堆叠；深红（只用 R）只在 `r-eco` 出现 |
 | `fig-effort` | 是不是只是更用力：steps / tool calls / out tokens 三视图 |
 
 不成图的维度（逐 trial 的 `round`×条件 24 格、6 条 missing 明细）留在正文表里：把表画成图只是换个形式，不是多一个信息。
