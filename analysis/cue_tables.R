@@ -31,6 +31,7 @@ OUT    <- "records/tables"
 PREREG <- "study/prereg/norris-r3-v1.json"
 CONDS  <- "study/conditions.json"
 INTERP <- "study/interpreters.json"
+FEATS  <- "study/features.json"
 
 # fromJSON(simplifyVector = FALSE) gives NULL for an absent key and a list for a present
 # one, so every scalar needs the same unwrapping. One helper, defined before its first use.
@@ -108,7 +109,9 @@ trials <- observations |>
     answer_json
   ) |>
   left_join(conditions, by = "wording") |>
-  left_join(planned, by = "slot") |>
+  # Only the plan order crosses over: plan_family duplicates condition and rep duplicates
+  # round, and a column nothing declares is a definition nobody reviewed.
+  left_join(planned |> select(slot, plan_order), by = "slot") |>
   left_join(judged, by = "run_id") |>
   left_join(first_runtime, by = "run_id") |>
   mutate(
@@ -185,3 +188,33 @@ if (any(trials_plan$verdict == "unknown")) {
   cat(sprintf("note: %d trial(s) have no verdict in %s\n",
               sum(trials_plan$verdict == "unknown"), JUDGE))
 }
+
+# ==============================================================================
+# 5. 口径 gate: the declared features and the emitted columns must cover each other
+# ==============================================================================
+
+# A derived variable is a definition, and a definition that only exists inside a mutate()
+# call is one only its author can audit. study/features.json declares every column that is
+# not a verbatim record field; this asserts both directions, so neither can drift:
+#   - a column in the table that nobody declared  -> a definition nobody reviewed
+#   - a feature declared that the table lacks     -> a definition nobody applies
+spec <- fromJSON(FEATS, simplifyVector = FALSE)
+
+declared <- map_chr(spec$features, \(f) chr(f$name))
+base     <- flatten_chr(spec$base_columns$columns)
+emitted  <- names(trials_plan)
+
+undeclared <- setdiff(emitted, c(base, declared))
+unapplied  <- setdiff(declared, emitted)
+
+cat("\n5. FEATURE DECLARATION -- study/features.json vs the emitted columns\n")
+cat(sprintf("   base %d + declared %d = %d; emitted %d\n",
+            length(base), length(declared), length(c(base, declared)), length(emitted)))
+
+if (length(undeclared) || length(unapplied)) {
+  if (length(undeclared))  cat("   emitted but not declared: ", paste(undeclared, collapse = ", "), "\n")
+  if (length(unapplied))   cat("   declared but not emitted: ", paste(unapplied, collapse = ", "), "\n")
+  cat("   A column without a declaration is a definition nobody reviewed.\n")
+  quit(status = 2)
+}
+cat("   ok -- every column is either a record field or a declared feature\n")

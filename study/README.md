@@ -14,7 +14,8 @@
 | `expectations.json` | 已知识别关系的断言对（折叠 / 分开） | `tools/verify_index.py` |
 | `criteria/<ver>.json` | 真值、容差、以及容差自己的已知漏洞 | `tools/grade.py` |
 | `cue-arms.json` | 臂表：按实测 token 声明，含切分器与版本 | `tools/batch_plan.py`、`analysis/cue_tokens.py` |
-| `interpreters.json` | 「哪段命令文本算用了哪个运行时」 | `analysis/process_report.py` |
+| `interpreters.json` | 「哪段命令文本算用了哪个运行时」 | `analysis/process_report.py`、`cue_tables.R`、`cue_effect.py` |
+| `features.json` | 分析变量的口径：每一列怎么定义、由什么派生、看不见什么 | `analysis/cue_tables.R`（双向断言），`cue_report.R`（消费） |
 | `lexicon.json` | 「出现在路径里就已经是 cue」的词 | `tools/exposure_check.py` |
 | `tasks/<id>.json` | 题面 + output schema，**唯一来源** | `tools/batch_plan.py` |
 | `ws-template/` | 工作区的唯一起点 | `tools/workspace.py` |
@@ -33,6 +34,7 @@
 - 改 `tasks/*.json` 的题面或 schema → 视为新任务，旧 run 不再与之可比；`batch_plan` 的 `prompt_sha` / `schema_sha` 会变。
 - 改 `ws-template/` → `template_tree_sha` 变，此前所有槽位与该模板不再同源。
 - 改 `lexicon.json` → 重跑 `exposure_check`，历史 run 的判定可能翻面。
-- 改 `interpreters.json` → 重跑 `process_report`；它只换读法，旧 run 不必重跑。
+- 改 `interpreters.json` → 重跑 `process_report` 与 `cue_tables.R`；它只换读法，旧 run 不必重跑。
+- 改 `features.json` → 等于改口径。改动会让此前的数字变成另一个量的测量值，必须写依据记录；`cue_tables.R` 的双向断言会挡住"代码加了列却没声明"和"声明了却没生产"两种情况。
 
 工作约束见 [AGENTS.md](AGENTS.md)。

@@ -1,0 +1,112 @@
+{
+  "_what": "The analytic variables. Every column of records/tables/trials.csv that is not a verbatim field of the record is declared here, with its definition and with what it cannot see. analysis/cue_tables.R asserts that this file and the table agree, so a derived variable cannot appear in the code without being declared, and cannot be declared without being produced.",
+  "_why": "The inputs of this study are declared (task, schema, criteria, conditions, interpreters). The outcomes derived FROM those inputs were not, and they were living inside a sequence of dplyr::mutate() calls. Two of them require a judgement that a reader would otherwise have to reverse-engineer: what counts as the first runtime, and whether a mixed trial is a separate kind of observation. A definition that only exists in code is a definition only its author can audit.",
+  "_read_by": "analysis/cue_tables.R (asserts coverage), analysis/cue_report.R (consumes), analysis/cue_effect.py (recomputes first_runtime independently -- by design, two implementations that must agree)",
+  "_not_here": "Pass/fail is not a feature of this layer: it belongs to study/criteria/ and is carried in as the `verdict` column without being recomputed.",
+
+  "base_columns": {
+    "_what": "Columns copied verbatim from records/tables/observations.csv, listed so that anything else in trials.csv has to be declared below.",
+    "columns": [
+      "run_id", "trial", "task_id", "stimulus_id", "input_id",
+      "stop_reason", "wall_ms", "steps", "tool_calls", "tool_errors",
+      "in_total", "out_tokens", "answer_json"
+    ]
+  },
+
+  "features": [
+    {
+      "name": "slot",
+      "definition": "The working-directory name the subject received, taken from workspace.cwd_name.",
+      "derived_from": "observations.ws_name",
+      "cannot_see": "The absolute path. Only the last segment is ever a treatment; the parent is the slot root and is constant across the batch.",
+      "role": "identity of the assignment"
+    },
+    {
+      "name": "wording",
+      "definition": "slot with its replicate suffix removed (the trailing -<digits>).",
+      "derived_from": "slot",
+      "cannot_see": "Nothing. It is a pure string operation, and it is checked against study/conditions.json rather than trusted.",
+      "role": "identity of the cluster -- the unit the permutation test permutes"
+    },
+    {
+      "name": "rep_in_slot",
+      "definition": "The trailing integer of slot, i.e. which replicate this is.",
+      "derived_from": "slot",
+      "cannot_see": "Nothing. NOTE it is not the plan's `rep`: the plan reuses slot names across sub-batches, so the two agree only because this batch built one slot per (wording, replicate) pair.",
+      "role": "debugging aid, never analysed"
+    },
+    {
+      "name": "condition",
+      "definition": "The condition that claims this wording, from study/conditions.json.",
+      "derived_from": "wording + study/conditions.json",
+      "cannot_see": "Whether the subject read the name as belonging to that category. The classification is ours; what the model inferred is the thing being estimated.",
+      "role": "the treatment"
+    },
+    {
+      "name": "plan_order",
+      "definition": "The order this trial had in the pre-registered plan.",
+      "derived_from": "records/plan/<plan_id>.jsonl, joined on slot",
+      "cannot_see": "The order trials actually started in. That is a separate measurement (tools/order_fidelity.py, from startedAt) and the two agreeing is a result, not an assumption.",
+      "role": "block structure and provenance"
+    },
+    {
+      "name": "round",
+      "definition": "ceil(plan_order / 48). One round is one complete replicate of the design: every wording once.",
+      "derived_from": "plan_order",
+      "cannot_see": "Time. Rounds are contiguous in the plan, and the batch was run in plan order, so round is also a rough time index -- which is why a round effect and a time effect cannot be separated here.",
+      "role": "the block, for the position check"
+    },
+    {
+      "name": "first_runtime",
+      "definition": "The runtime named by the EARLIEST executed tool call whose arguments name any runtime: R, python, or none if no call names one. Calls that name no runtime are skipped, not counted as none -- reading a file before deciding how to compute is not a choice of runtime.",
+      "derived_from": "records/tables/calls.csv + study/interpreters.json",
+      "cannot_see": [
+        "Whether that runtime was used successfully. A trial that tried R, failed, and fell back to python is recorded as R; the fallback is visible in the call table but is not collapsed into this variable.",
+        "An invocation from a mention. A comment, filename or string literal naming python counts, which is why the matched call is printed beside every count in analysis/process_report.py rather than trusted.",
+        "What the subject would have done next. Only the first named runtime is recorded; the full set is in runtimes_seen."
+      ],
+      "role": "the primary outcome"
+    },
+    {
+      "name": "runtimes_seen",
+      "definition": "Every runtime named anywhere in the trial's executed calls, sorted and joined with '+'. Empty when no call names one.",
+      "derived_from": "calls.csv + study/interpreters.json",
+      "cannot_see": "Order or frequency. It answers 'was more than one named', nothing finer.",
+      "role": "corroboration for first_runtime"
+    },
+    {
+      "name": "mixed",
+      "definition": "TRUE when runtimes_seen names more than one runtime.",
+      "derived_from": "runtimes_seen",
+      "cannot_see": "Which came first, or whether one was abandoned. Always reported beside the primary table, never used to exclude.",
+      "role": "reported alongside, per the prereg's mixed_trials rule"
+    },
+    {
+      "name": "zero_tool",
+      "definition": "TRUE when the trial executed no tool call at all.",
+      "derived_from": "tool_calls",
+      "cannot_see": "Why. A trial that answered from memory and one whose tools were refused look identical here.",
+      "role": "instrument-effectiveness reading -- a POST-TREATMENT variable, so it is counted and reported, never conditioned on"
+    },
+    {
+      "name": "used_runtime",
+      "definition": "first_runtime is R or python.",
+      "derived_from": "first_runtime",
+      "cannot_see": "Anything about which one, which is the point: this is the 'did it compute at all' reading the prereg uses to decide whether the contrast is diluted. Also post-treatment, and for the same reason never a stratification variable.",
+      "role": "instrument-effectiveness reading"
+    },
+    {
+      "name": "verdict",
+      "definition": "The status this trial received from tools/grade.py under the criteria file the prereg names.",
+      "derived_from": "records/judgment/<criteria_id>.json, joined on run_id",
+      "cannot_see": "Whether the six numbers were computed or recalled. That is a separate question with its own reading (zero_tool), and the criteria file says so in its known_limits.",
+      "role": "secondary outcome, never the primary claim"
+    }
+  ],
+
+  "known_limits": [
+    "Everything here is derived from the record with no independent measurement, so a systematic error in the record layer propagates silently. That is why the record layer keeps its own round-trip and count checks rather than trusting this layer to notice.",
+    "first_runtime is computed twice, once here and once in analysis/cue_effect.py. That is deliberate: two implementations of the same definition that must agree before a number is reported. The agreement is 61 R / 202 python / 25 none over the 288 trials.",
+    "There is no post-treatment variable here that is safe to stratify on. zero_tool and used_runtime are both consequences of the treatment; they appear in this file so that they are named and avoided, not so that they can be used."
+  ]
+}
