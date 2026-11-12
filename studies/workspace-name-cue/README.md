@@ -13,7 +13,9 @@
 
 两边**都是软件项目名**，所以"像不像软件项目"被固定住，只有"是不是 R"在变。区间 [+0.153, +0.389]，六个 block 全部同向，零工具调用 0/288（不是在背答案）。
 
-完整依据、两次仪器故障、以及这批数据管不住什么 → [notes/2026-11-12-cue-effect-result.md](notes/2026-11-12-cue-effect-result.md)。
+**这条提升里有一部分是"试一下"，不是"改用"。** 61 条首用 R 的 trial 中 26 条同时点了 python，而 202 条首用 python 的里只有 1 条回头用 R。按条件：`r-eco` 26/72、`plain` 16/72、`software` 11/72、`py-eco` 4/72。所以主结论应读成"cue 把 R 提进了候选"，不是"cue 把语言换掉了"；两者的区别见 [fig-mixed](../../records/workspace-name-cue/figures/fig-mixed.png)。
+
+六对 pairwise 已补齐（[`cue_effect.py`](analysis/cue_effect.py) §3b）。`r-eco vs py-eco` 在 `P(Y=R)` 上是 +0.3611，p < 0.0001（43/2704156），所以效应不是"软件味"带来的。完整依据、两次仪器故障、以及这批数据管不住什么 → [notes/2026-11-12-cue-effect-result.md](notes/2026-11-12-cue-effect-result.md)。
 
 ## 为什么叫这个名字
 
@@ -51,6 +53,20 @@
 | `cue_effect.py` | 执行 prereg 声明的对比：措辞层面精确置换，穷举 C(n,k) |
 | `cue_tables.R` | 一行一个 trial 的整洁表 `trials.csv`，接上条件/分类/顺序/判定 |
 | `cue_report.R` | 估计与作图（读 `trials.csv`） |
+
+### 图
+
+五张，各回答 permutation p 值回答不了的一个问题。产物在 `records/workspace-name-cue/figures/`（派生，不入库）。
+
+| 图 | 回答什么 |
+|---|---|
+| `fig-contrast` | 差多少：四条件同一 0–1 轴，点=一个措辞，粗点=条件均值，灰条=95% bootstrap |
+| `fig-rank` | 是类别还是一个名字：24 个措辞排序 + 各自 Wilson 95% 区间 |
+| `fig-blocks` | 是不是某一批碰巧：六个 block 的哑铃，方向全部同向 |
+| `fig-mixed` | 提升是"改用"还是"试一下"：首次运行构成 + 混用比例同轴 |
+| `fig-effort` | 是不是只是更用力：steps / tool calls / out tokens 三视图 |
+
+不成图的维度（逐 trial 的 `round`×条件 24 格、6 条 missing 明细）留在正文表里：把表画成图只是换个形式，不是多一个信息。
 
 ## 跑一遍
 

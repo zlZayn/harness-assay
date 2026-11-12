@@ -31,6 +31,7 @@ python tools/patch_host_notice.py --check
 - 交付：`check_delivery` 单一 `toolSchemaDigest` / `systemPrompt`，prompt 全匹配 plan。
 - 宿主：`--check` 读 original，包目录只剩 `index.js` 与 `types/`；`audit_environment` RESULT: clean。
 - 通道：`exposure_check` PASS。
+- 研究层：`cue_report.R` 出 5 张图，排版闸门 5/5（字号全来自阶梯、家族 1/2）；`cue_effect.py` 主判定 p=0.0002 不变，pairwise 矩阵 6 对齐全。
 - 研究的判定与效应数字 → 该研究的 [README](studies/workspace-name-cue/README.md)。
 
 ## 待办

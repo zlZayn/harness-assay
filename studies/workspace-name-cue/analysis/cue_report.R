@@ -217,6 +217,11 @@ cat("scope:", FLOW, "\n\n")
 # marks, one faint source line. The reason the top two rows are the pre-registered
 # contrast is a sentence, and sentences belong beside the rows they are about -- so it is
 # drawn in the plotting area, not stacked under the title.
+#
+# The right-hand column is NOT the same statement twice. The rate is "which language did it
+# name first"; the mixed share is "how many trials went on to name a second one". Those come
+# apart exactly where it matters -- see 7d -- so they belong on the same scale, read against
+# the same four rows, rather than in a second chart with its own ruler.
 
 means <- by_condition |>
   mutate(condition = factor(condition, levels = LEVELS))
@@ -267,14 +272,33 @@ ggsave(file.path(FIG, "fig-contrast.png"), p_contrast,
        width = 9.6, height = 5.6, dpi = ASSAY_EXPORT$dpi, bg = ASSAY_EXPORT$bg)
 
 # --- 7b. one name or twelve ---------------------------------------------------
-# Ranked, one axis. If a single name were carrying the effect it would sit alone at the
-# top; if the effect were the category, most of the R-side names would sit high.
+# Ranked, one axis, each name carrying its own uncertainty. Without the interval this
+# figure over-reads: 5/6 and 3/6 are adjacent rows but very different evidence, and a
+# reader ranking twenty-four point estimates will see a staircase that is mostly noise.
+#
+# Wilson, not Wald: at 0/6 and 6/6 Wald collapses to a zero-width interval, and 0/6 is
+# exactly where several software names sit -- the interval would be narrowest where the
+# data are least informative.
+# Wilson 区间自己算，不引 binom 包：三行闭式，装了包反而多一个版本依赖。
+wilson <- function(x, n, z = 1.959964) {
+  p <- x / n
+  den <- 1 + z^2 / n
+  ctr <- (p + z^2 / (2 * n)) / den
+  half <- z * sqrt(p * (1 - p) / n + z^2 / (4 * n^2)) / den
+  c(lo = max(0, ctr - half), hi = min(1, ctr + half))
+}
 
 ranked <- by_wording |>
   filter(condition %in% FOCUS) |>
+  rowwise() |>
+  mutate(w = list(wilson(r, n)), lo = w[["lo"]], hi = w[["hi"]]) |>
+  ungroup() |>
   mutate(
     label = sprintf("%s  %d/%d", wording, r, n),
-    label = fct_reorder(label, p_r),
+    # Order by the interval's midpoint rather than by the point estimate: two names that
+    # landed on the same integer count are the same evidence and should not be separated
+    # by a tie-break the reader cannot see.
+    label = fct_reorder(label, (lo + hi) / 2),
     condition = factor(condition, levels = LEVELS)
   )
 
@@ -285,6 +309,8 @@ high_b <- sum(by_wording$condition == PRIMARY[[2]] & by_wording$p_r >= 0.5)
 p_rank <- ggplot(ranked, aes(p_r, label)) +
   geom_segment(aes(x = 0, xend = p_r, yend = label, colour = condition),
                linewidth = 0.5, alpha = 0.45) +
+  geom_errorbar(aes(xmin = lo, xmax = hi, colour = condition),
+                orientation = "y", width = 0.30, linewidth = 0.6, alpha = 0.55) +
   geom_point(aes(colour = condition), size = 2.6) +
   geom_vline(data = means |> filter(condition %in% FOCUS),
              aes(xintercept = p_r, colour = condition),
@@ -304,7 +330,7 @@ p_rank <- ggplot(ranked, aes(p_r, label)) +
   scale_y_discrete(expand = expansion(add = c(0.6, 2.0))) +
   labs(
     title = "It is the category, not one lucky name",
-    subtitle = sprintf("The contrast's 24 names, ranked; dashed rules are the two means. %d of 12 r-eco reach 3-in-6, %d of 12 software do.",
+    subtitle = sprintf("24 names ranked by their interval; whiskers are 95%%. %d of 12 r-eco reach 3-in-6, %d of 12 software do.",
                        high_a, high_b),
     x = "share of trials whose first runtime was R", y = NULL,
     caption = assay_source(TRIALS, nrow(trials))
@@ -312,9 +338,10 @@ p_rank <- ggplot(ranked, aes(p_r, label)) +
   assay_theme()
 
 ggsave(file.path(FIG, "fig-rank.png"), p_rank,
-       width = 8.6, height = 6.4, dpi = ASSAY_EXPORT$dpi, bg = ASSAY_EXPORT$bg)
+       width = 9.0, height = 6.6, dpi = ASSAY_EXPORT$dpi, bg = ASSAY_EXPORT$bg)
 
 # --- 7c. six blocks -----------------------------------------------------------
+
 # A dumbbell, not a line: block is categorical, and a connecting line would suggest the
 # six blocks are six points on a continuum, which they are not.
 
@@ -345,13 +372,131 @@ p_blocks <- by_round |>
 ggsave(file.path(FIG, "fig-blocks.png"), p_blocks,
        width = 8.6, height = 4.6, dpi = ASSAY_EXPORT$dpi, bg = ASSAY_EXPORT$bg)
 
+# --- 7d. the one thing the primary rate hides ---------------------------------
+# The primary says "named R first". It cannot say whether the trial then switched. That
+# distinction is not cosmetic: it separates "the cue changed the language" from "the cue
+# made it try a language and fall back", and only the first is what the study claims.
+#
+# A trial is drawn as three states in order of arrival -- first R, first python, no runtime
+# -- and the bar fills are the second runtime, if any. Reading across a row tells you what
+# the cue actually produced; the headline rate is the leftmost segment alone.
+
+RUNTIME_LEVELS <- c("R", "python", "none")
+RUNTIME_FILL   <- c("R" = PALETTE[["r-eco"]], "python" = PALETTE[["py-eco"]],
+                    "none" = "grey72")
+
+# Two panels on one shared scale: what was named first, and what was named at all. The
+# second panel is where "it only ever tried R" becomes visible; without it a reader sees
+# 41.7% and cannot tell 30 clean R trials from 30 trials that also ran python.
+
+by_cond_rt <- trials |>
+  count(condition, first_runtime) |>
+  mutate(share = n / sum(n), .by = condition)
+
+mixed_by_cond <- trials |>
+  group_by(condition) |>
+  summarise(mixed = sum(mixed), n = n(), share = mixed / n, .groups = "drop")
+
+# Two facts, one axis, same four rows: what was named first (bars), and how often a second
+# runtime was named at all (the dot column on the right). They must be read together. A
+# reader who sees only the bars cannot tell whether the cue changed the language or merely
+# added an attempt; a reader who sees only the mixed share does not know what was mixed.
+# Putting them in two charts would be two rulers for one question.
+
+# The legend order must match the reading order of the bar, which goes R, python, none
+# from the left edge. factor levels alone do not control this: position_stack draws the
+# LAST level first, so the levels are set to the reverse of the left-to-right order.
+STACK_LEVELS <- c("R", "python", "none")
+
+p_mix <- by_cond_rt |>
+  mutate(
+    condition = factor(condition, levels = rev(LEVELS)),
+    first_runtime = factor(first_runtime, levels = rev(STACK_LEVELS))
+  ) |>
+  ggplot(aes(share, condition)) +
+  geom_col(aes(fill = first_runtime), width = 0.58, colour = "white", linewidth = 0.6) +
+  geom_text(aes(label = ifelse(n > 0, n, "")),
+            position = position_stack(vjust = 0.5),
+            family = ASSAY_MONO, size = ASSAY_TYPE[["annot"]] / .pt,
+            colour = "white") +
+  # The switch column is drawn past the end of the 0..1 bar scale, in its own space, with
+  # its own faint baseline -- so it reads as a separate measurement, not as a fourth
+  # segment of the bar.
+  geom_segment(data = mixed_by_cond,
+               aes(x = 1.06, xend = 1.06 + share * 0.55, y = condition, yend = condition),
+               inherit.aes = FALSE, linewidth = 3.2, colour = "grey80", lineend = "round") +
+  geom_segment(data = mixed_by_cond,
+               aes(x = 1.06, xend = 1.06 + share * 0.55, y = condition, yend = condition),
+               inherit.aes = FALSE, linewidth = 3.2, lineend = "round",
+               colour = "grey42") +
+  geom_text(data = mixed_by_cond,
+            aes(x = 1.06 + share * 0.55 + 0.02, y = condition,
+                label = sprintf("%d/%d", mixed, n)),
+            inherit.aes = FALSE,
+            family = ASSAY_MONO, size = ASSAY_TYPE[["annot"]] / .pt,
+            hjust = 0, colour = "grey30") +
+  annotate("text", x = 1.06, y = 4.62, label = "named a\nsecond runtime",
+           family = ASSAY_MONO, size = ASSAY_TYPE[["annot"]] / .pt,
+           hjust = 0, vjust = 0, colour = "grey35", lineheight = 0.95) +
+  scale_fill_manual(values = RUNTIME_FILL, breaks = STACK_LEVELS,
+                    labels = c("R first", "python first", "no runtime")) +
+  scale_x_continuous(labels = \(x) ifelse(x <= 1, percent(x), ""),
+                     breaks = c(seq(0, 1, 0.25), 1.06),
+                     expand = expansion(mult = c(0, 0.02))) +
+  coord_cartesian(xlim = c(0, 1.40), clip = "off") +
+  labs(
+    title = "The R lift is real but a third of it comes with python alongside",
+    subtitle = "Bars: first runtime named, per condition's 72 trials. Right column: trials that named a second runtime.",
+    x = "share of the condition's trials", y = NULL,
+    fill = NULL,
+    caption = assay_source(TRIALS, nrow(trials))
+  ) +
+  assay_theme()
+
+ggsave(file.path(FIG, "fig-mixed.png"), p_mix,
+       width = 9.0, height = 4.8, dpi = ASSAY_EXPORT$dpi, bg = ASSAY_EXPORT$bg)
+
+# --- 7e. did the cue change the language, or the amount of work ---------------
+# The control a reader should demand: a cue that merely made the agent work harder or
+# longer would produce the same R rate without any preference for R. Steps and tool calls
+# are the effort; the two conditions that differ most in R sit on the same footing here.
+
+effort <- trials |>
+  select(condition, steps, tool_calls, out_tokens) |>
+  pivot_longer(c(steps, tool_calls, out_tokens), names_to = "measure",
+               values_to = "value") |>
+  mutate(
+    condition = factor(condition, levels = rev(LEVELS)),
+    measure = factor(measure, levels = c("steps", "tool_calls", "out_tokens"),
+                     labels = c("steps", "tool calls", "output tokens"))
+  )
+
+p_effort <- ggplot(effort, aes(value, condition)) +
+  geom_boxplot(aes(colour = condition), width = 0.5, outlier.shape = NA,
+               linewidth = 0.45, fill = NA) +
+  geom_point(aes(colour = condition), size = 1.1, alpha = 0.35,
+             position = position_jitter(height = 0.16, width = 0, seed = 2)) +
+  facet_wrap(~measure, ncol = 3, scales = "free_x") +
+  scale_colour_manual(values = PALETTE, guide = "none") +
+  labs(
+    title = "The cue did not make it work harder, only differently",
+    subtitle = "One point is one trial; boxes are quartiles. Three effort measures, same four conditions.",
+    x = NULL, y = NULL,
+    caption = assay_source(TRIALS, nrow(trials))
+  ) +
+  assay_theme()
+
+ggsave(file.path(FIG, "fig-effort.png"), p_effort,
+       width = 9.6, height = 4.2, dpi = ASSAY_EXPORT$dpi, bg = ASSAY_EXPORT$bg)
+
 # ==============================================================================
 # 8. Typography gate -- a self-check that only prints is not a self-check
 # ==============================================================================
 
 cat("8. TYPOGRAPHY -- every size must come from the shared ladder\n")
 
-audits <- list(contrast = p_contrast, rank = p_rank, blocks = p_blocks) |>
+audits <- list(contrast = p_contrast, rank = p_rank, blocks = p_blocks,
+               mixed = p_mix, effort = p_effort) |>
   map(assay_audit_ok)
 
 walk2(names(audits), audits, \(nm, a) {
