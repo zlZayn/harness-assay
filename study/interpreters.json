@@ -1,0 +1,18 @@
+{
+  "_what": "Which runtime a tool call's arguments are asking for. A study file, not a tool: the record layer keeps command text verbatim and must not decide that 'Rscript' means the R arm -- that is knowledge about this experiment.",
+  "_unit": "one tool call's `args` string, matched case-insensitively as a regex",
+  "_read_by": "analysis/process_report.py",
+
+  "runtimes": [
+    { "name": "R", "pattern": "\\bRscript(?:\\.exe)?\\b" },
+    { "name": "python", "pattern": "\\bpython(?:3)?(?:\\.exe)?\\b" }
+  ],
+
+  "_why_not_pwsh": "pwsh is the shell, not a choice: every command on this host runs in it. So 'used pwsh' is not an alternative to R or python, and a trial matching neither is reported as `none`, not as a third runtime.",
+
+  "_known_limits": [
+    "Substring matching cannot separate an invocation from a mention. A comment, a filename, or a string literal naming python counts as python. The report prints the matched call, so this is checked by eye rather than trusted.",
+    "A call that pipes one runtime through another counts as both. The report keeps the first match in call order as `first`, which is the only summary that survives that ambiguity; the full set is printed beside it.",
+    "Nothing here says the command succeeded. `error` comes from the host's own tool/result flag and is reported separately -- a subject that tried R, failed, and fell back to python is a different observation from one that never tried, and this file does not collapse them."
+  ]
+}
