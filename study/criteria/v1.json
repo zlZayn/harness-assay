@@ -1,0 +1,46 @@
+{
+  "criteria_id": "answer-v1",
+  "_what": "Judgement as data. Nothing here is applied by the record layer; grade.py reads this file, compares each observation's answer against declared truth, and writes a verdict record. Editing this file never touches an observation, so a criterion can be replaced and the same measurements re-judged for free.",
+
+  "task_key": "task_prompt_sha",
+  "_why_task_key": "taskId is a label the caller typed, so the same task is called 'cue-r' in one arm and 'cue-python' in another. The task's identity is the question itself.",
+
+  "tolerance": {
+    "rel": 5e-4,
+    "_derivation": "analysis/tolerance_notes.R. Both tasks ask for 4 significant digits. Every correctly rounded 4-digit answer lands below 3.9e-4 relative error; a 3-digit answer lands above 6.3e-4. 5e-4 separates them.",
+    "_measured": {
+      "wells mean 11.01 vs 11.0069672131": 2.755e-4,
+      "wells sd 2.416 vs 2.4156956760": 1.26e-4,
+      "welch mean_diff 1.105 vs 1.1045708061": 3.886e-4,
+      "welch p 0.0832 vs 0.083161116958": 4.676e-4
+    }
+  },
+
+  "known_limits": [
+    "A relative tolerance cannot enforce reported precision for small quantities. The Welch p-value was answered as 0.0832 -- three significant digits, not the four the task asked for -- and still lands at 4.7e-4, inside tolerance. Separating 'agreeing' from 'precise enough' needs a digit-count rule on the answer's literal text, which v1 does not have.",
+    "Truth values here are point estimates from a fixed fixture. They are not a tolerance band of their own; a task whose reference value is itself uncertain needs a different criteria shape."
+  ],
+
+  "tasks": {
+    "1d568c502858ab5d": {
+      "label": "mean and sample sd of column y in fixtures/wells.csv",
+      "truth": { "mean": 11.0069672131, "sd": 2.4156956760 },
+      "truth_source": "Rscript: mean(y), sd(y) over study/ws-template/fixtures/wells.csv, 61 rows"
+    },
+    "8b77fb39dd316917": {
+      "label": "Welch t-test of y by group: n per group, mean difference, p-value",
+      "truth": { "n_control": 34, "n_treat": 27, "mean_diff": 1.1045708061, "p_value": 0.083161116958 },
+      "truth_source": "Rscript: t.test(y ~ group, var.equal = FALSE) over study/ws-template/fixtures/wells.csv"
+    },
+    "6d94356d0f47a326": {
+      "label": "control probe: return the number 42",
+      "truth": { "n": 42 },
+      "truth_source": "given in the prompt"
+    },
+    "e41dd0eeddb3cf52": {
+      "label": "count the data rows of fixtures/probe.csv",
+      "truth": { "rows": 6 },
+      "truth_source": "wc -l equivalent: study/ws-template/fixtures/probe.csv has a header plus 6 data rows"
+    }
+  }
+}

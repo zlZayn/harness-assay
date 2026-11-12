@@ -46,10 +46,13 @@ tools/            generic record layer — names no study, no arm, no hypothesis
   record_index.py   run directory -> neutral condition records (stdlib only)
   verify_index.py   check the index against a study's declared expectations
   workspace.py      materialize a workspace from a template; snapshot it afterwards
+  grade.py          judge observations against a criteria file
 analysis/         R, over the index only — never over a run directory
   index_tables.R    two tidy tables: conditions (per arm), observations (per trial)
+  tolerance_notes.R where the numeric tolerance comes from
 study/            one study's own declarations
   expectations.json  pairs whose relationship is already known, so the index self-checks
+  criteria/v1.json   truth, tolerance, and the known limits of that tolerance
   ws-template/       the only source of truth for what a workspace starts as
 records/          generated (gitignored)
 ```
@@ -88,15 +91,36 @@ identical context.
 Nothing in these tables is a score. No pass column, no filter — a criteria file applies
 outside, and can be replaced without re-reading a record.
 
+## Judgement is a function of the record, not part of it
+
+```
+judgment = grade(observation, criteria)
+```
+
+`study/criteria/v1.json` holds the truth values, the tolerance and — as important — the
+tolerance's known limits. `tools/grade.py` applies it and writes
+`records/judgment/<criteria_id>.json`, carrying the sha of both inputs.
+
+Because the observation is expensive and the criteria are not, re-judging costs nothing.
+Measured: tightening `rel` from `5e-4` to `2e-4` under a new `criteria_id` flipped three
+verdicts from pass to fail while `observations_sha` stayed `dc455df4d6f66c09`. The
+measurements did not move; only the rule did.
+
+The criteria file states its own hole rather than hiding it: a relative tolerance cannot
+enforce *reported precision*, so the Welch p-value answered as `0.0832` — three digits
+where four were asked for — still lands at `4.7e-4` and passes. v2 of the criteria would
+need a digit-count rule on the answer's literal text; v1 records the gap.
+
 ## Running it
 
 ```bash
-python tools/record_index.py                       # writes records/index.jsonl
+python tools/record_index.py                       # records/index.jsonl
 python tools/verify_index.py \
   --index records/index.jsonl \
   --expect study/expectations.json
 
-Rscript analysis/index_tables.R                    # writes records/tables/*.csv
+Rscript analysis/index_tables.R                    # records/tables/*.csv
+python tools/grade.py --criteria study/criteria/v1.json
 
 python tools/workspace.py create   <slot>          # fresh workspace under %TEMP%
 python tools/workspace.py snapshot <slot>          # what the subject left behind
