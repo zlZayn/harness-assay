@@ -37,7 +37,21 @@ TASKS = HERE / "study" / "tasks"
 PLAN_DIR = HERE / "records" / "plan"
 RUNS = pathlib.Path(os.environ.get("DSH_HOME") or pathlib.Path.home() / ".dsh") \
     / "harness-dispatcher" / "runs"
-SLOTS = pathlib.Path(os.environ.get("ASSAY_SLOTS") or "D:/assay/slots")
+
+
+def slots_root() -> pathlib.Path:
+    """Where the batch's workspaces will live. Stated, never assumed.
+
+    A literal default here would be a machine path inside a tool that is meant to know no
+    study, and it would silently disagree with the root the arm table was counted against.
+    """
+    chosen = (os.environ.get("ASSAY_SLOTS") or "").strip()
+    if not chosen:
+        raise SystemExit(
+            "slot root unknown: set ASSAY_SLOTS (the same root the arm table records)\n"
+            "  the plan embeds absolute cwds, so the root has to be stated"
+        )
+    return pathlib.Path(chosen)
 
 
 def canon(obj) -> str:
@@ -49,7 +63,7 @@ def sha(obj, n: int = 12) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:n]
 
 
-def build(arms: dict, task: dict, k: int, plan_id: str) -> list[dict]:
+def build(arms: dict, task: dict, k: int, plan_id: str, root: pathlib.Path) -> list[dict]:
     """One row per trial. The slot name carries the cue, so the replicate is a suffix."""
     rows = []
     for arm in arms["arms"]:
@@ -63,7 +77,7 @@ def build(arms: dict, task: dict, k: int, plan_id: str) -> list[dict]:
                 "cue": arm["cue"],
                 "expected_path_tokens": arm["tokens"],
                 "expected_delta": arm["delta_vs_shortest"],
-                "cwd": str(SLOTS / slot),
+                "cwd": str(root / slot),
                 "task_id": task["id"],
                 "prompt_sha": sha(task["prompt"]),
                 "schema_sha": sha(task["schema"]),
@@ -71,7 +85,7 @@ def build(arms: dict, task: dict, k: int, plan_id: str) -> list[dict]:
     return rows
 
 
-def verify(rows: list[dict], task: dict, expect_complete: bool) -> int:
+def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Path) -> int:
     """Is the board in the state the plan assumes?
 
     Four states, and only three of them are problems:
@@ -99,7 +113,7 @@ def verify(rows: list[dict], task: dict, expect_complete: bool) -> int:
     print(f"{'slot':<14}{'slot on disk':<14}{'runs':<6}state")
     print("-" * 60)
     for slot in sorted(by_slot):
-        exists = (SLOTS / slot).is_dir()
+        exists = (root / slot).is_dir()
         runs = recorded.get(slot, [])
         if len(runs) > 1:
             state, bad = f"DUPLICATE ({len(runs)})", True
@@ -153,11 +167,12 @@ def main() -> int:
     task = json.loads(task_path.read_text(encoding="utf-8"))
 
     plan_id = f"{args.task}-k{args.k}-{sha(arms['arms'] + [task['prompt'], task['schema']])}"
-    rows = build(arms, task, args.k, plan_id)
+    root = slots_root()
+    rows = build(arms, task, args.k, plan_id, root)
 
     if args.verify:
         print(f"plan {plan_id}\n")
-        return verify(rows, task, args.expect_complete)
+        return verify(rows, task, args.expect_complete, root)
 
     PLAN_DIR.mkdir(parents=True, exist_ok=True)
     out = PLAN_DIR / f"{plan_id}.jsonl"

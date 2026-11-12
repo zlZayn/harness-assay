@@ -21,6 +21,7 @@ in a path is not the same kind of signal as an explicit language or package name
 treating them as one factor would average two different hypotheses.
 """
 import json
+import os
 import pathlib
 import sys
 
@@ -30,7 +31,17 @@ ENCODING = "o200k_base"
 TOKENIZER = "tiktoken"
 VERSION = tiktoken.__version__
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-BASE = r"D:\assay\slots"
+
+# Where slots will live. Never a literal: the token cost depends on this prefix, so the
+# declaration records which root it was counted for. Set ASSAY_SLOTS or --slots.
+BASE = (os.environ.get("ASSAY_SLOTS") or "").strip()
+if len(sys.argv) > 1 and sys.argv[1] == "--slots" and len(sys.argv) > 2:
+    BASE = sys.argv[2]
+if not BASE:
+    raise SystemExit(
+        "slot root unknown: set ASSAY_SLOTS, or pass --slots <path>\n"
+        "  the token cost of an arm depends on this prefix, so it has to be stated, not assumed"
+    )
 
 # candidate slot names; `role` says what each one is supposed to be able to show
 CANDIDATES = [
@@ -67,6 +78,9 @@ def main() -> int:
     shortest = min(r["tokens"] for r in rows)
     for r in rows:
         r["delta_vs_shortest"] = r["tokens"] - shortest
+        # The absolute path is what the model sees; it is derived here, not stored, so the
+        # declaration stays portable. Re-run this file if the slot root moves.
+        del r["path"]
 
     rows.sort(key=lambda r: (r["family"], r["tokens"]))
 
@@ -75,7 +89,9 @@ def main() -> int:
                       "_caveat": "proxy. The subject runs on DeepSeek's tokenizer, which is not "
                                  "published. Absolute counts are approximate; differences between "
                                  "arms measured with this one tool are consistent."},
-        "unit": "the full slot path as it reaches the subject, e.g. D:\\assay\\slots\\python-01",
+        "unit": "the full slot path as it reaches the subject, prefix + '/' + slot",
+        "slots_root": BASE,
+        "_root_matters": "tokens are counted with this prefix; move the root and re-run",
         "baseline": {"shortest_slot": min(rows, key=lambda r: r["tokens"])["slot"],
                      "tokens": shortest},
         "_calibration": {
