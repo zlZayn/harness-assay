@@ -27,7 +27,7 @@
 
 ## 支撑的决策
 
-- 批次 2 的 96 条子批以"每组 12 条复查摘要"为执行纪律，写进 [prereg](../../study/prereg/norris-r3-v1.json) 的 `execution.gate_after_each_sub_batch` 之外的每次复查。
+- 批次 2 的 96 条子批以"每组 12 条复查摘要"为执行纪律，写进 [prereg](../../studies/workspace-name-cue/prereg/norris-r3-v1.json) 的 `execution.gate_after_each_sub_batch` 之外的每次复查。
 - 两次事故的 run 目录都保留在 `$DSH_HOME/harness-dispatcher/discarded/`（不在 `runs/` 下，不进索引），附 `WHY.txt`。
 
 ## 长期方向

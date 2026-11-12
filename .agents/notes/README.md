@@ -9,6 +9,8 @@
 
 分界只有一条：**做选择**还是**做调查**。事故触发的不在这里，去 `docs/postmortem/`（按需才建）。
 
+**这里只装仪器层（`tools/`、`analysis/`）的决定。** 某一项研究自己的结论与依据，住在该研究的 `notes/` 下——见 [研究组织规则](../../studies/README.md)。
+
 ## 规则
 
 - 第 3 行必须是状态行，四值之一：`状态：生效` / `状态：被取代` / `状态：已否决` / `状态：已归档`。
@@ -21,6 +23,6 @@
 
 - [操作者路径为何消不掉](2026-11-12-operator-path-leak.md) — 依据
 - [跑批顺序必须交错](2026-11-12-run-order-confound.md) — 决策
-- [W5 批次 1 读出了什么](2026-11-12-batch1-result.md) — 依据
 - [重打 schema 是唯一反复的故障](2026-11-12-schema-retyping.md) — 依据
-- [第二批结果：一个 R 包名让模型改用 R](2026-11-12-cue-effect-result.md) — 依据
+
+研究层的两份结论在 [workspace-name-cue/notes/](../../studies/workspace-name-cue/notes/)。
