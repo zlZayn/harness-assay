@@ -9,10 +9,12 @@ judgement criteria will drift, and later readers only have what was written down
 
 ## The split that makes it work
 
-Records are produced by [`dsh-harness-dispatcher`](https://github.com/zlZayn) and land in
-`$DSH_HOME/harness-dispatcher/runs/<runId>/`. That layer is deliberately left alone. What
-lives here is the **overlay**: reading those records into something computable, and making
-sure a conclusion can be traced back to the conditions that produced it.
+Records are produced by
+[`dsh-harness-dispatcher`](https://github.com/dsh-plugin-lab/dsh-harness-dispatcher) and
+land in `$DSH_HOME/harness-dispatcher/runs/<runId>/`. That layer is deliberately left
+alone. What lives here is the **overlay**: reading those records into something
+computable, and making sure a conclusion can be traced back to the conditions that
+produced it.
 
 ```
 records/<runId>/          the dispatcher's own output — never edited, never duplicated
