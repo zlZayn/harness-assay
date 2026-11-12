@@ -29,8 +29,21 @@ import shutil
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
 TEMPLATE_DEFAULT = HERE / "study" / "ws-template"
-ROOT_DEFAULT = pathlib.Path(os.environ.get("TEMP") or "/tmp") / "harness-assay" / "ws"
 RECORD_DEFAULT = HERE / "records" / "ws"
+
+
+def default_root() -> pathlib.Path:
+    """Where slots live. `$ASSAY_SLOTS` wins; the TEMP fallback is for a quick look only.
+
+    TEMP is swept by the OS, and a slot is evidence: `<slot>.create.json` names its
+    absolute path, so a cleared root turns every past run into a dangling reference --
+    silently, since nothing re-reads the files. Set ASSAY_SLOTS to a durable directory
+    for anything worth keeping.
+    """
+    chosen = os.environ.get("ASSAY_SLOTS", "").strip()
+    if chosen:
+        return pathlib.Path(chosen)
+    return pathlib.Path(os.environ.get("TEMP") or "/tmp") / "harness-assay" / "ws"
 
 
 def file_sha(path: pathlib.Path) -> str:
@@ -112,12 +125,12 @@ def main() -> int:
 
     c = sub.add_parser("create")
     c.add_argument("slot")
-    c.add_argument("--root", type=pathlib.Path, default=ROOT_DEFAULT)
+    c.add_argument("--root", type=pathlib.Path, default=default_root())
     c.add_argument("--template", type=pathlib.Path, default=TEMPLATE_DEFAULT)
 
     s = sub.add_parser("snapshot")
     s.add_argument("slot")
-    s.add_argument("--root", type=pathlib.Path, default=ROOT_DEFAULT)
+    s.add_argument("--root", type=pathlib.Path, default=default_root())
     s.add_argument("--out", type=pathlib.Path, default=RECORD_DEFAULT)
 
     args = ap.parse_args()

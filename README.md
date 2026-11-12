@@ -67,6 +67,11 @@ fresh directory per slot, so "the two directories were identical" is a hash, not
 `template_tree_sha` in `records/ws/<slot>.create.json` is that hash; `tree_sha` in
 `<slot>.after.json` is what the subject left behind.
 
+Slots live wherever `$ASSAY_SLOTS` points. The fallback is a TEMP path, and that is only
+for a quick look: a slot is evidence, `<slot>.create.json` names its absolute path, and
+nothing re-reads that path — so a swept TEMP root turns past runs into dangling
+references silently.
+
 Both records are written with exclusive-create, so a slot is one run. Reusing a name fails
 loudly rather than silently stacking two runs into one history.
 
