@@ -46,6 +46,8 @@ tools/            generic record layer — names no study, no arm, no hypothesis
   record_index.py   run directory -> neutral condition records (stdlib only)
   verify_index.py   check the index against a study's declared expectations
   workspace.py      materialize a workspace from a template; snapshot it afterwards
+analysis/         R, over the index only — never over a run directory
+  index_tables.R    two tidy tables: conditions (per arm), observations (per trial)
 study/            one study's own declarations
   expectations.json  pairs whose relationship is already known, so the index self-checks
   ws-template/       the only source of truth for what a workspace starts as
@@ -65,6 +67,27 @@ fresh directory per slot, so "the two directories were identical" is a hash, not
 Both records are written with exclusive-create, so a slot is one run. Reusing a name fails
 loudly rather than silently stacking two runs into one history.
 
+## Two tidy tables
+
+`analysis/index_tables.R` turns the index into two files under `records/tables/`:
+
+| table | one row per | holds |
+|---|---|---|
+| `conditions` | `stimulus_id` — an **arm** | only what the subject received: system prompt, tool table, injected messages, route |
+| `observations` | a **trial** | provenance (`input_id`, `harness_sha`) + workspace + outcome |
+
+The split is what keeps a condition replaceable: two harness files that differ only in
+row order collapse into **one** `conditions` row (`n_inputs = 2`) while staying two
+`observations`. Replace the file, and no conclusion changes meaning — it was never
+about the file.
+
+`in_total` is `uncachedInputTokens + cacheReadTokens`. Only the sum is a property of the
+prompt; the split between the two buckets is a cache artifact and moves between runs with
+identical context.
+
+Nothing in these tables is a score. No pass column, no filter — a criteria file applies
+outside, and can be replaced without re-reading a record.
+
 ## Running it
 
 ```bash
@@ -72,6 +95,8 @@ python tools/record_index.py                       # writes records/index.jsonl
 python tools/verify_index.py \
   --index records/index.jsonl \
   --expect study/expectations.json
+
+Rscript analysis/index_tables.R                    # writes records/tables/*.csv
 
 python tools/workspace.py create   <slot>          # fresh workspace under %TEMP%
 python tools/workspace.py snapshot <slot>          # what the subject left behind
