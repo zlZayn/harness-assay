@@ -1,42 +1,49 @@
 #!/usr/bin/env python3
-"""Patch the host's working-directory notice so it stops naming where the session came from.
+"""Apply or revert a minimal host patch, inside an explicit window.
 
-Why this exists
----------------
-`@deepseek-ai/dsh-working-directory` injects a message whenever a session's directory
-changes. The message names both ends:
+What this is for
+----------------
+`@deepseek-ai/dsh-working-directory` injects a notice naming both ends of a directory
+change, including the parent session's cwd -- the operator's root, copied into every
+delegated child by `childSessionMeta`. For a study whose treatment is a directory name,
+that is a cue arriving through a channel nobody declared.
 
-    The working directory changed from "<parent cwd>" to "<child cwd>".
+The host must not stay modified. So the patch is a **repo-owned artifact applied inside a
+window**, and this script owns both ends of that window:
 
-For a subagent, the parent cwd is the operator's session root -- copied into the child's
-session header by `childSessionMeta`, then compared in `commit()`. So every delegated
-subject is told the operator's directory, and no dispatcher-side option can prevent it:
-the notice is emitted before the dispatcher's trial begins, and the service's only config
-key is `defaultDirectory`.
+    python tools/patch_host_notice.py --apply --expect original    # open the window
+    python tools/patch_host_notice.py --revert --expect patched    # close it
 
-Why removing it is safe
------------------------
-The subject still learns where it is: the runtime-context snapshot carries
-`Current working directory: "<child cwd>"`. What the patch removes is only the *source*
-side -- the operator's path, which is not part of any stimulus a study declares.
+Why a window and not a plugin: the notice is emitted by a service the child composes
+before the dispatcher's trial begins, and the service's only config key is
+`defaultDirectory`. The alternatives -- a repo-owned cordis row that re-registers the
+service -- mean subclassing a host service and depending on scope shadowing that this repo
+has not verified. A one-line edit with a checked window is the smaller, more honest risk.
 
-It also fixes five more sections' worth of the same problem for any harness that does not
-carry a persona row setting `includeRuntimeContext: false`.
+The reload boundary matters more than the file
+----------------------------------------------
+The host holds the module in memory. Writing the file changes nothing until the module is
+reloaded (`dsh_hot_reload { module: '@deepseek-ai/dsh-working-directory' }`), and reverting
+likewise needs a reload to take effect. So the window is bounded by reloads, not by writes:
+a revert without a reload leaves the running host patched.
 
-Durability
-----------
-This file lives inside a global npm install, so an upgrade restores the original. The
-script is idempotent and refuses to guess: it matches one exact original string, writes a
-backup once, and exits non-zero on anything it does not recognise. Re-run it after an
-upgrade; tools/exposure_check.py is what tells you the patch is needed again.
+`--expect` is what makes that checkable in a script: it exits non-zero when the file is not
+in the requested state, so a batch can refuse to start, or refuse to claim it cleaned up.
+
+Nothing here guesses. It matches one exact original string, keeps one backup, and refuses
+to edit a file it does not recognise -- an upstream rewrite should stop the run, not be
+silently overwritten.
 
 Usage:
-    python tools/patch_host_notice.py [--check] [--revert]
+    python tools/patch_host_notice.py --check
+    python tools/patch_host_notice.py --apply  [--expect original]
+    python tools/patch_host_notice.py --revert [--expect patched]
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import pathlib
 import subprocess
 import sys
@@ -55,39 +62,94 @@ PATCHED = (
     '`The working directory is now ${JSON.stringify(directory)}.`'
 )
 
+# Known bytes, so "is the host clean?" is answered by a hash rather than by a substring.
+# Measured on @deepseek-ai/dsh-working-directory 0.2.2-rc.1, 2026-11-12. A new upstream
+# version will not match these, which is exactly when a human should look.
+KNOWN_SHA256 = {
+    "76b2f53517bc3312084bc062ce8bbc4111f3b723d96da080157046c2b6d4766a": "original",
+    "a1599cf6dfe9b2dbb1d62f83dde6f725ecbc969c44e3142367e8a68eea51ba13": "patched",
+}
+
+BACKUP_SUFFIX = ".bak-assay"
+
+RELOAD_HINT = (
+    "the file is not the host: reload the module for this to take effect\n"
+    "  dsh_hot_reload { module: '@deepseek-ai/dsh-working-directory' }\n"
+    "  then: python tools/exposure_check.py --lexicon study/lexicon.json"
+)
+
 
 def candidates() -> list[pathlib.Path]:
     """Every installed copy of the host we can find, so a second install is not missed."""
-    out = []
+    found: list[pathlib.Path] = []
     npm_root = pathlib.Path.home() / "AppData" / "Roaming" / "npm" / "node_modules"
-    if (npm_root / RELATIVE.parent / "index.js").exists():
-        out.append(npm_root / RELATIVE)
+    if (npm_root / RELATIVE).exists():
+        found.append(npm_root / RELATIVE)
     try:
         global_root = subprocess.run(
             ["npm", "root", "-g"], capture_output=True, text=True, check=False
         ).stdout.strip()
         if global_root:
-            p = pathlib.Path(global_root) / RELATIVE
-            if p.exists() and p not in out:
-                out.append(p)
+            extra = pathlib.Path(global_root) / RELATIVE
+            if extra.exists() and extra not in found:
+                found.append(extra)
     except OSError:
         pass
-    return out
+    return found
 
 
 def state_of(path: pathlib.Path) -> str:
-    text = path.read_text(encoding="utf-8")
-    if PATCHED in text:
-        return "patched"
-    if ORIGINAL in text:
-        return "original"
+    """Hash first: a substring can be right while 171 stray CRLF bytes are not."""
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest in KNOWN_SHA256:
+        return KNOWN_SHA256[digest]
+    text = path.read_bytes()
+    if PATCHED.encode("utf-8") in text:
+        return "patched-unrecognised"
+    if ORIGINAL.encode("utf-8") in text:
+        return "original-unrecognised"
     return "unknown"
+
+
+def clean(path: pathlib.Path) -> bool:
+    """True when the file is byte-identical to the stock host."""
+    return state_of(path) == "original"
+
+
+def differs_from_backup(path: pathlib.Path, backup: pathlib.Path) -> bool:
+    """Bytes, not content.
+
+    The first version of this script skipped the revert when the file merely *contained*
+    the original pattern, and the file was 171 bytes larger with CRLF endings everywhere
+    else. Content state said "original", the hash said otherwise. Reverting is a byte
+    operation, so it is decided by bytes.
+    """
+    return path.read_bytes() != backup.read_bytes()
+
+
+def edit_bytes(path: pathlib.Path, old: str, new: str) -> None:
+    """Replace one exact byte sequence, preserving every other byte.
+
+    Deliberately binary. A text-mode read/write pair normalises line endings, which turned
+    a 7030-byte LF file into a 7201-byte CRLF file on the first attempt here: the content
+    looked right and the hash did not. Reverting a host patch has to be byte-exact, or the
+    "clean" state is just a second mutation nobody accounted for.
+    """
+    data = path.read_bytes()
+    needle = old.encode("utf-8")
+    if needle not in data:
+        raise ValueError(f"pattern not found in {path}")
+    path.write_bytes(data.replace(needle, new.encode("utf-8")))
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--check", action="store_true", help="report state, change nothing")
-    ap.add_argument("--revert", action="store_true", help="restore the backup")
+    group = ap.add_mutually_exclusive_group(required=True)
+    group.add_argument("--check", action="store_true", help="report state, change nothing")
+    group.add_argument("--apply", action="store_true", help="open the window")
+    group.add_argument("--revert", action="store_true", help="close the window")
+    ap.add_argument("--expect", choices=["original", "patched"],
+                    help="exit non-zero unless every copy is in this state")
     args = ap.parse_args()
 
     targets = candidates()
@@ -95,44 +157,56 @@ def main() -> int:
         print("no installed copy of @deepseek-ai/dsh-working-directory found", file=sys.stderr)
         return 1
 
-    worst = 0
+    status = 0
     for path in targets:
+        backup = path.with_suffix(path.suffix + BACKUP_SUFFIX)
         state = state_of(path)
+
         if args.check:
-            print(f"{path}\n  state: {state}")
+            print(f"{path}\n  state: {state}  backup: {'present' if backup.exists() else 'none'}")
             continue
+
+        if args.apply:
+            if state == "patched":
+                print(f"{path}\n  already patched")
+            elif state in ("unknown", "patched-unrecognised"):
+                print(f"{path}\n  state is {state}; upstream may have changed.\n"
+                      f"  Refusing to edit. Re-measure and update ORIGINAL/PATCHED/KNOWN_SHA256.",
+                      file=sys.stderr)
+                status = 2
+            else:
+                if not backup.exists():
+                    backup.write_bytes(path.read_bytes())
+                edit_bytes(path, ORIGINAL, PATCHED)
+                print(f"{path}\n  patched")
 
         if args.revert:
-            backup = path.with_suffix(path.suffix + ".bak-assay")
             if not backup.exists():
-                print(f"{path}\n  no backup at {backup.name}; nothing to revert", file=sys.stderr)
-                worst = 1
-                continue
-            path.write_text(backup.read_text(encoding="utf-8"), encoding="utf-8")
-            print(f"{path}\n  reverted from {backup.name}  (state now: {state_of(path)})")
-            continue
+                # No backup: the only honest revert is a byte-identical restore, which a
+                # hash can confirm but this script cannot perform.
+                if clean(path):
+                    print(f"{path}\n  already byte-identical to the stock host")
+                else:
+                    print(f"{path}\n  state {state} but no backup at {backup.name}.\n"
+                          f"  Cannot restore byte-for-byte; reinstall the package.", file=sys.stderr)
+                    status = 2
+            elif not differs_from_backup(path, backup):
+                print(f"{path}\n  already identical to the backup, nothing to revert")
+            else:
+                path.write_bytes(backup.read_bytes())
+                print(f"{path}\n  reverted byte-for-byte from {backup.name}")
 
-        if state == "patched":
-            print(f"{path}\n  already patched, nothing to do")
-            continue
-        if state == "unknown":
-            print(f"{path}\n  does not match the expected original; upstream may have changed.\n"
-                  f"  Refusing to edit. Update ORIGINAL/PATCHED in this script.", file=sys.stderr)
-            worst = 2
-            continue
+        final = state_of(path)
+        if args.expect and final != args.expect:
+            print(f"  EXPECTED {args.expect}, found {final}", file=sys.stderr)
+            status = 3
 
-        backup = path.with_suffix(path.suffix + ".bak-assay")
-        if not backup.exists():
-            backup.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
-        text = path.read_text(encoding="utf-8").replace(ORIGINAL, PATCHED)
-        path.write_text(text, encoding="utf-8")
-        print(f"{path}\n  patched  (state now: {state_of(path)})")
-
-    if not args.check:
-        print("\nRestart the host or hot-reload the module for the patch to take effect:")
-        print("  dsh_hot_reload { module: '@deepseek-ai/dsh-working-directory' }")
-        print("  then: python tools/exposure_check.py --lexicon study/lexicon.json")
-    return worst
+    if args.apply:
+        print(f"\n{RELOAD_HINT}")
+    elif args.revert:
+        print("\nreload the module again so the running host drops the patch:\n"
+              "  dsh_hot_reload { module: '@deepseek-ai/dsh-working-directory' }")
+    return status
 
 
 if __name__ == "__main__":

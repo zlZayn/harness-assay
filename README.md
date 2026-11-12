@@ -116,7 +116,7 @@ enforce *reported precision*, so the Welch p-value answered as `0.0832` — thre
 where four were asked for — still lands at `4.7e-4` and passes. v2 of the criteria would
 need a digit-count rule on the answer's literal text; v1 records the gap.
 
-## What the operator leaks into every trial, and the fix
+## What the operator leaks into every trial, and the window that closes it
 
 The host injects a working-directory notice naming **two** paths — the destination and the
 one it came from:
@@ -134,27 +134,42 @@ No dispatcher-side option can prevent it. The notice is emitted before `harness_
 the trial, the service's only config key is `defaultDirectory`, and this host has no
 out-of-process subagent provider.
 
-So `tools/patch_host_notice.py` patches the notice at its source to name only the
-destination. The subject still learns where it is — the runtime-context snapshot carries
-`Current working directory: "<cwd>"` — and what disappears is the operator's path, which is
-not a stimulus any study declares.
+### The host is never left modified
 
-Measured before and after, same harness and same task:
+`tools/patch_host_notice.py` rewrites the notice to name only the destination, and the
+patch is a **repo-owned artifact applied inside a window**:
+
+```bash
+python tools/patch_host_notice.py --apply  --expect patched    # open
+python tools/patch_host_notice.py --revert --expect original    # close
+```
+
+`--expect` exits non-zero when the file is not in the wanted state, so a batch refuses to
+start, or refuses to claim it cleaned up. Nothing the subject needs is lost: the
+runtime-context snapshot still carries `Current working directory: "<cwd>"`. What goes away
+is the source side, which is operator state rather than stimulus.
+
+Verified, same harness and task:
 
 | run | paths delivered to the subject |
 |---|---|
-| `opA-01` (before) | `D:\RDirectory\harness-assay`, `D:\assay\slots\opA-01` |
-| `patch-check-01` (after) | `D:\assay\slots\patch-check-01` |
+| `opA-01` (stock host) | `D:\RDirectory\harness-assay`, `D:\assay\slots\opA-01` |
+| `patch-check-01` (patched) | `D:\assay\slots\patch-check-01` |
+| `revert-check-01` (reverted) | `D:\RDirectory\harness-assay`, `D:\assay\slots\revert-check-01` |
 
-The patch lives in a global npm install, so an upgrade restores the original. The script is
-idempotent, keeps one backup, and refuses to edit a file it does not recognise. Re-run
-`tools/patch_host_notice.py --check` after an upgrade; `tools/exposure_check.py` is what
-tells you the patch is needed again.
+### Three things that had to be learned the hard way
 
-What that cost, measured while the notice was still naming the operator: six runs with
-identical delivered context — step-1 prompt size `1886` tokens in every one — and the naive
-arm-vs-arm comparison still reported a **+14.4% wall-time difference**. The verdict was
-noise, and only the record's own step-1 accounting could show it.
+**A substring says nothing about bytes.** The first revert compared *content* and skipped
+work when the original pattern was present — while the file was 171 bytes larger with CRLF
+endings everywhere else. State is now decided by sha256 against hashes recorded for
+`0.2.2-rc.1`, and revert restores the backup byte-for-byte.
+
+**The file is not the host.** The running process holds the module in memory. The window is
+bounded by `dsh_hot_reload`, not by writes: a revert without a reload leaves the host
+patched. Both ends of the window need the reload.
+
+**A stale patch is indistinguishable from a clean session** in the record — which is why
+`tools/exposure_check.py` exists and why the batch should read its verdict, not assume it.
 
 ## Running it
 
