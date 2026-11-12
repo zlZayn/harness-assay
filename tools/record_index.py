@@ -22,6 +22,12 @@ Two identities, kept apart because they answer different questions:
                tool table verbatim, every injected message in order, the task prompt.
                Same stimulus => same id. Answers "was this the same experiment?".
 
+Both sources are folded in, the host's first: trials.jsonl carries
+modelInput.systemPrompt.digest and modelInput.toolSchemaDigest, computed by the host over
+what it actually assembled. Our own hashing uses canonical JSON (sort_keys), which is
+blind to some real differences -- the order of a JSON-schema object's properties, for one.
+So the host digests are authoritative and ours are the fallback and the cross-check.
+
 A conclusion must rest on stimulus_id, not input_id: the harness file is replaceable,
 the delivered context is not. Note that stimulus_id necessarily includes the workspace
 path, because the host delivers it inside an injected message.
@@ -180,10 +186,30 @@ def index_run(run_dir: pathlib.Path) -> list[dict]:
         deliv = delivered(events, trial_no)
         texts = deliv.pop("_texts") if deliv else []
 
+        # The host digests what it actually assembled; our own hashing canonicalizes
+        # (sort_keys), which erases, for example, the order of a JSON-schema object's
+        # properties -- a difference the model does see. So the host's verbatim digests
+        # are authoritative where present, and ours are the fallback.
+        mi = rec.get("modelInput") or {}
+        host_sys = mi.get("systemPrompt") or {}
+        host_digests = {
+            "system_prompt": host_sys.get("digest"),
+            "system_prompt_chars": host_sys.get("chars"),
+            "tools": mi.get("toolSchemaDigest"),
+            "tools_names": mi.get("tools"),
+            "route": mi.get("route"),
+        }
+
         stimulus_id = None if deliv is None else sha({
-            "system_prompt_sha": deliv["system_prompt"]["sha"],
-            "tools_sha": deliv["tools"]["sha"],
-            "messages_sha": deliv["messages"]["sha"],
+            # authoritative when the host reported it
+            "host_system_prompt": host_digests["system_prompt"],
+            "host_tools": host_digests["tools"],
+            "host_tools_names": host_digests["tools_names"],
+            # our own reading of the same things, kept so the identity survives a run
+            # recorded without modelInput, and so the two sources can be compared
+            "text_system_prompt": deliv["system_prompt"]["sha"],
+            "text_tools": deliv["tools"]["sha"],
+            "text_messages": deliv["messages"]["sha"],
         })
 
         host = (rec.get("host") or {}).get("values") or {}
@@ -199,7 +225,7 @@ def index_run(run_dir: pathlib.Path) -> list[dict]:
             "stimulus_unavailable": deliv is None,
 
             "inputs": inputs,
-            "stimulus": deliv,
+            "stimulus": {**(deliv or {}), "host_digests": host_digests},
 
             "workspace": {
                 "cwd_name": cwd_name,
