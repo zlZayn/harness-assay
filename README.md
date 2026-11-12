@@ -43,14 +43,25 @@ two runs differing only in `task.cwd` share a fingerprint. `stimulus_id` closes 
 tools/            generic record layer — names no study, no arm, no hypothesis
   record_index.py   run directory -> neutral condition records (stdlib only)
   verify_index.py   check the index against a study's declared expectations
+  workspace.py      materialize a workspace from a template; snapshot it afterwards
 study/            one study's own declarations
   expectations.json  pairs whose relationship is already known, so the index self-checks
-fixtures/         task data
-records/          generated index (gitignored)
+  ws-template/       the only source of truth for what a workspace starts as
+records/          generated (gitignored)
 ```
 
 Study-specific things — arm names, cue words, what counts as a pass — belong under
 `study/`, never in `tools/`. Elsewhere a different task should reuse `tools/` unchanged.
+
+## Workspaces are built, not remembered
+
+The starting state of a workspace is **constructive**: `study/ws-template/` is copied to a
+fresh directory per slot, so "the two directories were identical" is a hash, not a note.
+`template_tree_sha` in `records/ws/<slot>.create.json` is that hash; `tree_sha` in
+`<slot>.after.json` is what the subject left behind.
+
+Both records are written with exclusive-create, so a slot is one run. Reusing a name fails
+loudly rather than silently stacking two runs into one history.
 
 ## Running it
 
@@ -59,6 +70,9 @@ python tools/record_index.py                       # writes records/index.jsonl
 python tools/verify_index.py \
   --index records/index.jsonl \
   --expect study/expectations.json
+
+python tools/workspace.py create   <slot>          # fresh workspace under %TEMP%
+python tools/workspace.py snapshot <slot>          # what the subject left behind
 ```
 
 No dependencies: the record layer is Python standard library only. The analysis layer (R)
