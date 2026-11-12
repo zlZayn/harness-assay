@@ -23,3 +23,4 @@
 - [跑批顺序必须交错](2026-11-12-run-order-confound.md) — 决策
 - [W5 批次 1 读出了什么](2026-11-12-batch1-result.md) — 依据
 - [重打 schema 是唯一反复的故障](2026-11-12-schema-retyping.md) — 依据
+- [第二批结果：一个 R 包名让模型改用 R](2026-11-12-cue-effect-result.md) — 依据
