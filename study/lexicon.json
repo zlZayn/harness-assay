@@ -1,0 +1,21 @@
+{
+  "_what": "Tokens whose presence in a path the subject can see would themselves be a cue. Study-specific by nature: a different study declares a different list.",
+  "_why": "The operator's own working directory reaches the subject in the working-directory notice, and nothing in the record marks it as a variable. A session rooted at a path containing 'R' silently makes every trial of that session an R-cued trial.",
+  "_matching": {
+    "word": "the token matches a whole word inside a path segment, where a word boundary is a separator, a non-alphanumeric character, or a lower-to-upper transition (so 'RDirectory' yields ['R','Directory'] and matches 'r', while 'report' yields ['report'] and does not)",
+    "substring": "the token matches anywhere in the lowercased segment"
+  },
+  "tokens": [
+    { "text": "r", "match": "word", "note": "the language, and the letter" },
+    { "text": "python", "match": "word" },
+    { "text": "py", "match": "word" },
+    { "text": "tidyverse", "match": "substring" },
+    { "text": "ggplot", "match": "substring" },
+    { "text": "dplyr", "match": "substring" },
+    { "text": "pandas", "match": "substring" },
+    { "text": "numpy", "match": "substring" },
+    { "text": "julia", "match": "substring" },
+    { "text": "stata", "match": "substring" },
+    { "text": "matlab", "match": "substring" }
+  ]
+}
