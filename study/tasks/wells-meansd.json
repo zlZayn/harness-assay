@@ -1,0 +1,18 @@
+{
+  "_what": "One task, as data. The prompt and the output schema live here and nowhere else, so every arm of a batch sends byte-identical bytes. A schema typed twice is a schema that differs: the first cue probe here lost its comparability because one call wrote {mean, sd} and the other wrote {sd, mean}, which changes the delivered tool table.",
+  "id": "wells-meansd",
+  "prompt": "Report the mean and the sample standard deviation of column y in fixtures/wells.csv.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "mean": { "type": "number" },
+      "sd": { "type": "number" }
+    },
+    "required": ["mean", "sd"]
+  },
+  "graded_by": {
+    "criteria": "study/criteria/v1.json",
+    "task_key": "1d568c502858ab5d",
+    "_note": "truth mean 11.0069672131 / sd 2.4156956760 over the 61-row fixture; a correctly rounded 4-digit answer passes at rel 5e-4"
+  }
+}

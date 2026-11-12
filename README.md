@@ -47,15 +47,41 @@ tools/            generic record layer — names no study, no arm, no hypothesis
   verify_index.py   check the index against a study's declared expectations
   workspace.py      materialize a workspace from a template; snapshot it afterwards
   grade.py          judge observations against a criteria file
+  exposure_check.py does the delivered context carry a cue nobody declared?
+  patch_host_notice.py  applies/reverts the host notice patch inside a checked window
+  batch_plan.py     arm table + task -> a checked list of trials to run
 analysis/         R, over the index only — never over a run directory
   index_tables.R    two tidy tables: conditions (per arm), observations (per trial)
   tolerance_notes.R where the numeric tolerance comes from
+  cue_tokens.py     per-arm token cost, with the tokenizer named and pinned
+  exposure_report.py  did the intended manipulation actually happen?
 study/            one study's own declarations
   expectations.json  pairs whose relationship is already known, so the index self-checks
   criteria/v1.json   truth, tolerance, and the known limits of that tolerance
+  cue-arms.json      arms declared by measured token cost, not by character length
+  lexicon.json       tokens that would themselves be a cue if a path carried them
+  tasks/<id>.json    the prompt and schema — the single source of both
   ws-template/       the only source of truth for what a workspace starts as
+docs/notes/       what was measured and what failed
 records/          generated (gitignored)
 ```
+
+## A batch has a plan before it has trials
+
+`tools/batch_plan.py` turns the arm table plus one task into a list of trials, and can be
+asked to check the board against it. Nothing in it calls a model.
+
+```bash
+python tools/batch_plan.py --task wells-meansd --k 5            # write the plan
+python tools/batch_plan.py --task wells-meansd --k 5 --verify   # pre-flight
+python tools/batch_plan.py --task wells-meansd --k 5 --verify --expect-complete   # post-batch
+```
+
+The pre-flight separates four states and treats only three as problems: `done`, `pending`
+(normal before a batch), `OCCUPIED` (a leftover slot `create` would refuse) and
+`DUPLICATE` (two runs stacked into one history). It also asserts the prompt and schema
+hashes are single-valued across the plan, because a schema typed twice is a schema that
+differs — the first cue probe lost its comparability exactly that way.
 
 Study-specific things — arm names, cue words, what counts as a pass — belong under
 `study/`, never in `tools/`. Elsewhere a different task should reuse `tools/` unchanged.
