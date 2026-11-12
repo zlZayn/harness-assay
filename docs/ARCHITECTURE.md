@@ -82,6 +82,8 @@ records/judgment/<criteria_id>.json            判定（带两个输入的 sha�
 | 磁盘不是宿主 | 写回文件不改变运行中的进程 | 窗口两端都要 `dsh_hot_reload` |
 | 残留补丁与干净会话在记录里同形 | 两者都表现为「通知里没有操作者路径」 | `tools/exposure_check.py` 读最新一条 run 判定 |
 | 手打两遍的 schema 会不一致 | 属性顺序一变，交付的工具表就变 | 题面与 schema 只在 `study/tasks/*.json` 写一次 |
+| 主结局可能不在记录里 | 正确性到天花板时，唯一能用的结局是"用了什么方法"，而它只存在于工具调用原文 | `record_index` 折 `observed.tool_calls`；怎么读是 `study/interpreters.json` 的事 |
+| 臂与位置共线 | 一臂的重复挤在一个时间块里，漂移和臂效应事后分不开 | 按重复交错；`order` 进 plan 也进 `plan_id` |
 
 ## 不做什么
 
