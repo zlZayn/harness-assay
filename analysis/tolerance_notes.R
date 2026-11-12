@@ -1,5 +1,5 @@
 # Where the numeric tolerance comes from. Not part of the pipeline: run it when the
-# criteria change, and paste the numbers into study/criteria/v1.json.
+# criteria change, and paste the numbers into studies/<id>/criteria/v1.json.
 #
 # The tasks ask for 4 significant digits. That fixes what a *correct* answer looks like:
 # the correctly rounded 4-digit form has a relative error of at most 5e-5, and in practice

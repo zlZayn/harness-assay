@@ -8,7 +8,7 @@
   "tolerance": {
     "rel": 7.3e-6,
     "_why_this_default": "Fallback only: the loosest of the six derived thresholds, so a field added later cannot accidentally be held to a stricter rule than the task asked for. Every field below overrides it.",
-    "_derivation": "study/DESIGN.md section 7. The task asks for 6 significant digits. For a value with mantissa m, rounding to k digits produces a relative error up to 0.5*10^-k/m, so the same digit count means different relative errors depending on where the mantissa sits: 1.00212 loses 3.2e-6 at 6 digits, 0.999994 loses only 2.5e-7. Therefore one shared threshold cannot both accept a correctly rounded 6-digit answer and reject a 5-digit one. The threshold per field is the geometric midpoint between the 6-digit and 5-digit rounding errors: epsilon_6 < threshold < epsilon_5, verified field by field.",
+    "_derivation": "DESIGN.md section 7. The task asks for 6 significant digits. For a value with mantissa m, rounding to k digits produces a relative error up to 0.5*10^-k/m, so the same digit count means different relative errors depending on where the mantissa sits: 1.00212 loses 3.2e-6 at 6 digits, 0.999994 loses only 2.5e-7. Therefore one shared threshold cannot both accept a correctly rounded 6-digit answer and reject a 5-digit one. The threshold per field is the geometric midpoint between the 6-digit and 5-digit rounding errors: epsilon_6 < threshold < epsilon_5, verified field by field.",
     "_verified": "Every 6-digit rounding passes its own threshold and every 5-digit rounding fails it. Checked before the task was ever run."
   },
 
@@ -40,7 +40,7 @@
         "r2": 9.8e-7
       },
       "truth_source": "NIST StRD certified values (Linear Least Squares, Norris). Re-derived independently before use: R lm(), Python numpy lstsq (SVD), a hand-written closed form, and normal equations via matrix inverse all reproduce these to at least 12 significant digits. The certified value is the truth; the implementations only confirm that 6 digits is achievable by the ordinary route.",
-      "tolerance_source": "Geometric midpoint between the 6-digit and 5-digit relative rounding errors of each certified value (study/DESIGN.md section 7). Recomputed by script rather than estimated.",
+      "tolerance_source": "Geometric midpoint between the 6-digit and 5-digit relative rounding errors of each certified value (DESIGN.md section 7). Recomputed by script rather than estimated.",
       "answer_fields_expected": 6
     }
   }

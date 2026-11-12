@@ -1,0 +1,6 @@
+{
+  "study_id": "workspace-name-cue",
+  "_what": "Which study the study-aware tools default to. `tools/` must not name a study, so the name lives here as data: a tool reads this file, or $ASSAY_STUDY when you want to work on a second study without editing anything.",
+  "_override": "ASSAY_STUDY=workspace-name-cue (any directory name under studies/)",
+  "current": "workspace-name-cue"
+}

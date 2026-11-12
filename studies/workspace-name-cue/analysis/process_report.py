@@ -2,7 +2,7 @@
 
 The primary outcome of the cue study is process-level: every arm answers correctly, so the
 only thing left to differ is *how* it computed. Correctness at ceiling is a property of this
-task, not an assumption -- see study/criteria/v1.json.
+task, not an assumption -- see criteria/v1.json.
 
 This is a description, not a judgement: it prints counts and the calls behind them. There is
 no p-value and no pass column, for the same reason the record layer has none -- a rule
@@ -10,8 +10,8 @@ applied here would be a rule a later reader cannot replace. Judging belongs to a
 file, and this script is what gives such a file something to read.
 
 Reads:  records/index.jsonl          (built by tools/record_index.py)
-        study/interpreters.json      which command text counts as which runtime
-        study/cue-arms.json          slot prefix -> arm, so the labels are the study's own
+        interpreters.json           which command text counts as which runtime
+        arms.json                   slot prefix -> arm, so the labels are the study's own
 Writes: nothing.
 """
 import argparse
@@ -21,7 +21,9 @@ import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+# This script belongs to one study, so it names its own directory once.
+STUDY = pathlib.Path(__file__).resolve().parent.parent
+ROOT  = STUDY.parent.parent
 
 
 def load(path: pathlib.Path):
@@ -37,8 +39,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--index", type=pathlib.Path, default=ROOT / "records" / "index.jsonl")
     ap.add_argument("--interpreters", type=pathlib.Path,
-                    default=ROOT / "study" / "interpreters.json")
-    ap.add_argument("--arms", type=pathlib.Path, default=ROOT / "study" / "cue-arms.json")
+                    default=STUDY / "interpreters.json")
+    ap.add_argument("--arms", type=pathlib.Path, default=STUDY / "arms.json")
     args = ap.parse_args()
 
     if not args.index.exists():
@@ -125,13 +127,13 @@ def main() -> int:
     print()
     print("No p-value here on purpose. At these counts the arithmetic is a Fisher exact test")
     print("on a table this printout already contains, and a rule applied here would be a")
-    print("rule a later reader could not replace. Write it into study/criteria/ when the")
+    print("rule a later reader could not replace. Write it into criteria/ when the")
     print("batch that needs it exists.")
 
     outside = [t for t in trials if not t["arm"]]
     if outside:
         print()
-        print(f"note: {len(outside)} trial(s) belong to no arm in study/cue-arms.json "
+        print(f"note: {len(outside)} trial(s) belong to no arm in arms.json "
               f"({', '.join(sorted({t['slot'] for t in outside}))})")
         print("      They are printed above and excluded from every count in 2 and 3.")
     return 0

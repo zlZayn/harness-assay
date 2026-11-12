@@ -1,5 +1,5 @@
 {
-  "_why": "Fixture assertions for the record index. Each one is a pair of runs whose relationship we already know, so the index can be checked without spending a model call. Study-specific by nature: lives here, not in tools/.",
+  "_why": "Fixture assertions for the record index. Each one is a pair of runs whose relationship we already know, so the index can be checked without spending a model call. Study-specific by nature: it names this study's own runs, so it lives here and not in tools/.",
   "assertions": [
     {
       "kind": "same_stimulus",

@@ -69,5 +69,5 @@ print("  and equal-length was not a design goal -- it is just what these six hap
 
 print("\n=== the pair that is equal-length by construction ===")
 print("  opA-01..03 vs opB-01..03: same name length, same prompt size.")
-print("  A real cue contrast would NOT be equal-length; cue-arms.json states each")
+print("  A real cue contrast would NOT be equal-length; arms.json states each")
 print("  arm's measured cost instead of pretending the lengths match.")

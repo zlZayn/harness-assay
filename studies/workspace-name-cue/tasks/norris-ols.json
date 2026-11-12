@@ -7,7 +7,7 @@
     "cite": "Norris, J., NIST. Calibration of Ozone Monitors.",
     "_why_external": "The task is not invented here. A question written by whoever wants a particular answer is not a question; this one is written by NIST, with certified values, and the six quantities are theirs. That is the mechanical defence against designing the exam from the answer.",
     "_why_six_quantities": "All six are continuous and none is near a binary ceiling, so correctness keeps a gradient and cannot silently saturate. NIST also supplies a value for each, computed in arbitrary precision.",
-    "_considered_and_rejected": "Adding a seventh quantity (a t-based confidence interval for B1) would put the task out of reach of a hand-written shell one-liner, because it needs a t quantile. Rejected: it would mean editing an external exam, which is the freedom this study gives up on purpose. The shell category is instead treated as a legal outcome value, and its rate as an instrument-effectiveness reading (study/DESIGN.md section 8)."
+    "_considered_and_rejected": "Adding a seventh quantity (a t-based confidence interval for B1) would put the task out of reach of a hand-written shell one-liner, because it needs a t quantile. Rejected: it would mean editing an external exam, which is the freedom this study gives up on purpose. The shell category is instead treated as a legal outcome value, and its rate as an instrument-effectiveness reading (DESIGN.md section 8)."
   },
 
   "id": "norris-ols",
@@ -27,7 +27,7 @@
   },
 
   "graded_by": {
-    "criteria": "study/criteria/norris-v1.json",
+    "criteria": "criteria/norris-v1.json",
     "task_key": "<filled by the criteria file, which carries the prompt hash>"
   },
 

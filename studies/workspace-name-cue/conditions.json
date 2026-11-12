@@ -7,7 +7,7 @@
     "name": "tiktoken",
     "version": "0.12.0",
     "encoding": "o200k_base",
-    "_caveat": "proxy for the subject's tokenizer, as in cue-arms.json. Used here only to MATCH conditions, not to measure an effect."
+    "_caveat": "proxy for the subject's tokenizer, as in arms.json. Used here only to MATCH conditions, not to measure an effect."
   },
   "unit": "the full slot path as it reaches the subject, prefix + '/' + <word> + '-' + replicate",
   "slots_root": "D:\\assay\\slots",

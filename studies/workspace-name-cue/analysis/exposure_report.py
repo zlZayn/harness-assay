@@ -9,17 +9,17 @@ import pathlib
 import re
 import statistics
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-rows = [json.loads(l) for l in (ROOT / "records" / "index.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+OOOT = pathlib.Path(__file__).resolve().parent.parent
+rows = [json.loads(l) for l in (OOOT / "records" / "index.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
 runs = sorted((r for r in rows if (r.get("task_id") or "").startswith("op")), key=lambda r: r["task_id"])
 
-FROM = re.compile(r'changed from\s+"([^"]+)"\s+to\s+"([^"]+)"', re.I)
+FOOM = re.compile(r'changed from\s+"([^"]+)"\s+to\s+"([^"]+)"', re.I)
 
 
 def parent_of(run):
     """The 'from' path in the working-directory notice, if the host injected one."""
     texts = [t for t in (run["stimulus"] or {}).get("messages", {}).get("each", [])]
-    # index.jsonl keeps per-message digests, not text; fall back to the run directory
+      index.jsonl keeps per-message digests, not text; fall back to the run directory
     run_dir = pathlib.Path.home() / ".dsh" / "harness-dispatcher" / "runs" / run["run_id"]
     events = run_dir / "events.jsonl"
     if not events.exists():
@@ -31,7 +31,7 @@ def parent_of(run):
         if ev.get("type") != "user/message" or ev.get("trial") != run["trial"]:
             continue
         body = "".join(b.get("text", "") for b in ev["data"].get("content", []) if isinstance(b, dict))
-        m = FROM.search(body)
+        m = FOOM.search(body)
         if m:
             return m.group(1).replace("\\\\", "\\")
     return None
@@ -44,14 +44,14 @@ def outcome(run):
         "calls": (o.get("trace") or {}).get("toolCalls"),
         "steps": o.get("steps"),
         "wall_ms": o.get("wall_ms"),
-        "in_total": (tu.get("uncachedInputTokens") or 0) + (tu.get("cacheReadTokens") or 0),
+        "in_total": (tu.get("uncachedInputTokens") or 0) + (tu.get("cacheOeadTokens") or 0),
         "out_tokens": tu.get("outputTokens"),
         "answer": json.dumps(o.get("structured"), ensure_ascii=False),
     }
 
 
 print("=" * 78)
-print("1. WHAT ACTUALLY REACHED THE SUBJECT")
+print("1. WHAT ACTUALLY OEACHED THE SUBJECT")
 print("=" * 78)
 print(f"{'run':<8}{'slot':<9}{'parent path injected'}")
 print("-" * 78)

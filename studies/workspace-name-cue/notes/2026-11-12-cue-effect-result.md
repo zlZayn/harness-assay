@@ -2,8 +2,8 @@
 
 状态：生效
 
-（依据类记录。数字全部由 `python analysis/cue_effect.py` 生成，产出留在
-`records/judgment/cue-effect.json`；`records/` 是派生，不入库。）
+（依据类记录。数字全部由 `python studies/workspace-name-cue/analysis/cue_effect.py` 生成，产出留在
+`records/workspace-name-cue/judgment/cue-effect.json`；`records/` 是派生，不入库。）
 
 ## 背景
 
@@ -11,8 +11,8 @@
 题面、系统提示词、工具表全程不动，唯一的变量是那一个文件夹名。
 
 `plan_id` `norris-ols-k6-7a8e2a45c2f1`，288 trial：4 条件 × 12 措辞 × 6 重复，
-题是 NIST Norris 最小二乘（`study/tasks/norris-ols.json`），预注册见
-[prereg](../../study/prereg/norris-r3-v1.json)。分 3 个 96 条的子批跑，每 12 条一次
+题是 NIST Norris 最小二乘（`tasks/norris-ols.json`），预注册见
+[prereg](../prereg/norris-r3-v1.json)。分 3 个 96 条的子批跑，每 12 条一次
 交付闸门，每个子批开关一次宿主补丁窗口。
 
 ## 结论

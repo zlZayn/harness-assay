@@ -11,7 +11,7 @@
     "required": ["mean", "sd"]
   },
   "graded_by": {
-    "criteria": "study/criteria/v1.json",
+    "criteria": "criteria/v1.json",
     "task_key": "1d568c502858ab5d",
     "_note": "truth mean 11.0069672131 / sd 2.4156956760 over the 61-row fixture; a correctly rounded 4-digit answer passes at rel 5e-4"
   }

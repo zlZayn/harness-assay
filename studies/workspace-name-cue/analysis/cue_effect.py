@@ -1,6 +1,6 @@
 """The contrast the cue study was pre-registered to estimate.
 
-This does not invent a test. The test is declared in study/prereg/norris-r3-v1.json
+This does not invent a test. The test is declared in prereg/norris-r3-v1.json
 (`analysis.primary`): a wording-level permutation over the wordings of the two conditions
 being compared, one-sided, exhaustively enumerated. This script executes that declaration.
 
@@ -26,10 +26,10 @@ What this file deliberately does not do
   Both are in the prereg's `_not_analysed` list.
 
 Reads:  records/index.jsonl            (tools/record_index.py)
-        study/conditions.json          wording -> condition
-        study/interpreters.json        which command text names which runtime
-        study/prereg/norris-r3-v1.json the declared contrasts, printed beside the numbers
-Writes: records/judgment/cue-effect.json
+        conditions.json          wording -> condition
+        interpreters.json        which command text names which runtime
+        prereg/norris-r3-v1.json the declared contrasts, printed beside the numbers
+Writes: records/<study>/judgment/cue-effect.json
 """
 
 from __future__ import annotations
@@ -44,7 +44,11 @@ import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+# This file belongs to this study, so it names its own directory once and derives the
+# rest. The record layer still knows no study; only a study's own analysis does.
+STUDY = pathlib.Path(__file__).resolve().parent.parent
+ROOT  = STUDY.parent.parent
+REC   = ROOT / "records" / STUDY.name
 
 
 def load(p: pathlib.Path):
@@ -95,13 +99,13 @@ def exact_permutation(counts_a, counts_b, observed):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--index", type=pathlib.Path, default=ROOT / "records" / "index.jsonl")
-    ap.add_argument("--conditions", type=pathlib.Path, default=ROOT / "study" / "conditions.json")
+    ap.add_argument("--conditions", type=pathlib.Path, default=STUDY / "conditions.json")
     ap.add_argument("--interpreters", type=pathlib.Path,
-                    default=ROOT / "study" / "interpreters.json")
+                    default=STUDY / "interpreters.json")
     ap.add_argument("--prereg", type=pathlib.Path,
-                    default=ROOT / "study" / "prereg" / "norris-r3-v1.json")
+                    default=STUDY / "prereg" / "norris-r3-v1.json")
     ap.add_argument("--out", type=pathlib.Path,
-                    default=ROOT / "records" / "judgment" / "cue-effect.json")
+                    default=REC / "judgment" / "cue-effect.json")
     args = ap.parse_args()
 
     if not args.index.exists():
@@ -138,7 +142,7 @@ def main() -> int:
         })
 
     if not trials:
-        print("no trial in the index belongs to a wording in study/conditions.json", file=sys.stderr)
+        print("no trial in the index belongs to a wording in conditions.json", file=sys.stderr)
         return 1
 
     per_wording = collections.defaultdict(list)
@@ -212,7 +216,7 @@ def main() -> int:
 
     print()
     print("=" * 92)
-    print("3. THE DECLARED CONTRASTS (study/prereg/norris-r3-v1.json, analysis.primary/secondary)")
+    print("3. THE DECLARED CONTRASTS (prereg/norris-r3-v1.json, analysis.primary/secondary)")
     print("=" * 92)
     results = [contrast("primary: does an R-package name raise R use, holding "
                         "'looks like software' constant?", "r-eco", "software", "R")]

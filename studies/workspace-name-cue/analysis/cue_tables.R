@@ -10,7 +10,7 @@
 # runtime, which plan order a slot was run in -- and emits one row per trial. Everything
 # after this point reads `trials.csv` and never touches JSON again.
 #
-# It still does not judge. `verdict` is brought in from `records/judgment/`, which is
+# It still does not judge. `verdict` is brought in from the judgement record, which is
 # `tools/grade.py`'s output; nothing here recomputes or overrides it. A pass column
 # computed in the analysis layer would be a second judge.
 #
@@ -26,12 +26,18 @@ suppressPackageStartupMessages({
   library(tidyr)
 })
 
+# This script belongs to one study, so it names its own directory once. The instrument
+# tables stay at records/tables because they cover every run on the machine; everything
+# this study derives goes under records/<study_id>/ so a second study cannot overwrite it.
+STUDY  <- "studies/workspace-name-cue"
+REC    <- file.path("records", basename(STUDY))
+
 TABLES <- "records/tables"
-OUT    <- "records/tables"
-PREREG <- "study/prereg/norris-r3-v1.json"
-CONDS  <- "study/conditions.json"
-INTERP <- "study/interpreters.json"
-FEATS  <- "study/features.json"
+OUT    <- REC
+PREREG <- file.path(STUDY, "prereg/norris-r3-v1.json")
+CONDS  <- file.path(STUDY, "conditions.json")
+INTERP <- file.path(STUDY, "interpreters.json")
+FEATS  <- file.path(STUDY, "features.json")
 
 # fromJSON(simplifyVector = FALSE) gives NULL for an absent key and a list for a present
 # one, so every scalar needs the same unwrapping. One helper, defined before its first use.
@@ -41,8 +47,8 @@ chr <- function(x) if (is.null(x) || length(x) == 0) NA_character_ else as.chara
 # after anything typed here. Two literals that have to agree are two chances to fall out
 # of step, and the failure would be silent: the join quietly produces no rows.
 prereg   <- fromJSON(PREREG, simplifyVector = FALSE)
-PLAN     <- file.path("records", "plan", paste0(chr(prereg$plan_id), ".jsonl"))
-JUDGE    <- file.path("records", "judgment", basename(chr(prereg$criteria)))
+PLAN     <- file.path(REC, "plan", paste0(chr(prereg$plan_id), ".jsonl"))
+JUDGE    <- file.path(REC, "judgment", basename(chr(prereg$criteria)))
 
 # ==============================================================================
 # 1. The study's own declarations
@@ -180,7 +186,7 @@ trials_plan |> count(verdict, sort = TRUE) |> print(n = Inf)
 cat("\n")
 
 if (!all(trials_plan$first_runtime %in% c("R", "python", "none"))) {
-  cat("an outcome value appeared that study/interpreters.json did not declare\n")
+  cat("an outcome value appeared that interpreters.json did not declare\n")
   quit(status = 2)
 }
 
@@ -194,7 +200,7 @@ if (any(trials_plan$verdict == "unknown")) {
 # ==============================================================================
 
 # A derived variable is a definition, and a definition that only exists inside a mutate()
-# call is one only its author can audit. study/features.json declares every column that is
+# call is one only its author can audit. features.json declares every column that is
 # not a verbatim record field; this asserts both directions, so neither can drift:
 #   - a column in the table that nobody declared  -> a definition nobody reviewed
 #   - a feature declared that the table lacks     -> a definition nobody applies
@@ -207,7 +213,7 @@ emitted  <- names(trials_plan)
 undeclared <- setdiff(emitted, c(base, declared))
 unapplied  <- setdiff(declared, emitted)
 
-cat("\n5. FEATURE DECLARATION -- study/features.json vs the emitted columns\n")
+cat("\n5. FEATURE DECLARATION -- features.json vs the emitted columns\n")
 cat(sprintf("   base %d + declared %d = %d; emitted %d\n",
             length(base), length(declared), length(c(base, declared)), length(emitted)))
 

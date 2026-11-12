@@ -8,9 +8,9 @@
   "_plan_id_note": "sha of (arm table + prompt + schema + 'rep-major'). Reproduce with: python tools/batch_plan.py --task norris-ols --k 6 --family r-eco,py-eco,software,plain",
 
   "task": "norris-ols",
-  "criteria": "study/criteria/norris-v1.json",
-  "conditions_source": "study/conditions.json",
-  "arms_source": "study/cue-arms.json",
+  "criteria": "criteria/norris-v1.json",
+  "conditions_source": "conditions.json",
+  "arms_source": "arms.json",
 
   "design": {
     "conditions": ["r-eco", "py-eco", "software", "plain"],
@@ -51,7 +51,7 @@
 
   "analysis": {
     "outcome": "Y = the first executed tool call whose arguments name a runtime, reduced to {R, python, shell, none}. shell and none count as 'not R'. Script extension (.R/.py) is recorded as corroboration and its agreement rate is reported, not substituted.",
-    "classification": "study/interpreters.json, unchanged since batch 1",
+    "classification": "interpreters.json, unchanged since batch 1",
     "primary": {
       "contrast": "P(Y=R | r-eco) - P(Y=R | software)",
       "test": "wording-level permutation over the 24 wordings, C(24,12) label assignments, one-sided",
@@ -64,7 +64,7 @@
       "P(Y in {R,python} | software) - P(Y in {R,python} | plain) -- does software flavour alone make it reach for a runtime",
       "per-wording rates, all 48, printed -- these are what reveal how much wordings actually differ",
       "zero-tool-call rate, shell rate, mixed rate per condition",
-      "correctness: how many of the six quantities land inside study/criteria/norris-v1.json (secondary outcome, never primary)"
+      "correctness: how many of the six quantities land inside criteria/norris-v1.json (secondary outcome, never primary)"
     ],
     "trial_level_test": "reported alongside as a secondary reading, with its scope stated as 'these 12 wordings'",
     "_not_analysed": [

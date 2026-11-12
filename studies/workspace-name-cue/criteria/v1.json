@@ -25,12 +25,12 @@
     "1d568c502858ab5d": {
       "label": "mean and sample sd of column y in fixtures/wells.csv",
       "truth": { "mean": 11.0069672131, "sd": 2.4156956760 },
-      "truth_source": "Rscript: mean(y), sd(y) over study/ws-template/fixtures/wells.csv, 61 rows"
+      "truth_source": "Rscript: mean(y), sd(y) over ws-template/fixtures/wells.csv, 61 rows"
     },
     "8b77fb39dd316917": {
       "label": "Welch t-test of y by group: n per group, mean difference, p-value",
       "truth": { "n_control": 34, "n_treat": 27, "mean_diff": 1.1045708061, "p_value": 0.083161116958 },
-      "truth_source": "Rscript: t.test(y ~ group, var.equal = FALSE) over study/ws-template/fixtures/wells.csv"
+      "truth_source": "Rscript: t.test(y ~ group, var.equal = FALSE) over ws-template/fixtures/wells.csv"
     },
     "6d94356d0f47a326": {
       "label": "control probe: return the number 42",
@@ -40,7 +40,7 @@
     "e41dd0eeddb3cf52": {
       "label": "count the data rows of fixtures/probe.csv",
       "truth": { "rows": 6 },
-      "truth_source": "wc -l equivalent: study/ws-template/fixtures/probe.csv has a header plus 6 data rows"
+      "truth_source": "wc -l equivalent: ws-template/fixtures/probe.csv has a header plus 6 data rows"
     }
   }
 }

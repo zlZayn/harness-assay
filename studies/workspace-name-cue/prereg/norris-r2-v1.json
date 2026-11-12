@@ -8,19 +8,19 @@
   "_plan_id_note": "sha of (arm table + prompt + schema + 'rep-major'). Reproduce with: python tools/batch_plan.py --task norris-ols --k 8 --family r-eco,placebo. A different k, task, arm set or order yields a different id.",
 
   "task": "norris-ols",
-  "criteria": "study/criteria/norris-v1.json",
+  "criteria": "criteria/norris-v1.json",
   "arms": { "r-eco": ["dplyr", "ggplot", "tidyr"], "placebo": ["marlow", "fenwick", "orwell"] },
   "k_per_arm": 8,
   "trials": 48,
   "order": "rep-major (one replicate of every arm, then the next)",
 
-  "_why_these_arms": "Each condition gets three wordings, so the conclusion is about the category rather than about one lucky string (study/DESIGN.md section 5). The placebo wordings cost 11 tokens each on the arm table, exactly what the R-ecosystem wordings cost, so the contrast is not a length contrast.",
+  "_why_these_arms": "Each condition gets three wordings, so the conclusion is about the category rather than about one lucky string (DESIGN.md section 5). The placebo wordings cost 11 tokens each on the arm table, exactly what the R-ecosystem wordings cost, so the contrast is not a length contrast.",
 
-  "_why_no_python_arm": "The python-cue arm is dropped from this batch. Batch 1 found it pinned at its ceiling (7/7), where its contrast carries almost no information, and the estimand this batch is sized for is the R-side lift. Consequence: the two-direction reading (study/DESIGN.md section 3) is not available from this batch, and delta is reported for the R direction only.",
+  "_why_no_python_arm": "The python-cue arm is dropped from this batch. Batch 1 found it pinned at its ceiling (7/7), where its contrast carries almost no information, and the estimand this batch is sized for is the R-side lift. Consequence: the two-direction reading (DESIGN.md section 3) is not available from this batch, and delta is reported for the R direction only.",
 
   "analysis": {
     "outcome": "Y = the first tool call in the trial whose arguments name a runtime, reduced to {R, python, shell, none}",
-    "classification": "study/interpreters.json, unchanged since batch 1",
+    "classification": "interpreters.json, unchanged since batch 1",
     "primary": {
       "contrast": "P(Y=R | r-eco) - P(Y=R | placebo)",
       "pooled_over": "the three wordings of each condition",
@@ -32,9 +32,9 @@
       "zero-tool-call rate per condition -- an instrument reading, not a cue effect",
       "shell-only rate per condition",
       "mixed trials (more than one runtime seen in a trial)",
-      "correctness: how many of the six quantities land inside study/criteria/norris-v1.json"
+      "correctness: how many of the six quantities land inside criteria/norris-v1.json"
     ],
-    "_not_analysed": "No cue-vs-cue contrast, no stratification on 'used a runtime at all', no attempt to exclude trials by outcome -- all three are post-treatment moves (study/DESIGN.md section 2)."
+    "_not_analysed": "No cue-vs-cue contrast, no stratification on 'used a runtime at all', no attempt to exclude trials by outcome -- all three are post-treatment moves (DESIGN.md section 2)."
   },
 
   "power_analysis": {
@@ -64,5 +64,5 @@
 
   "_what_would_falsify_the_hypothesis": "P(Y=R | r-eco) not above P(Y=R | placebo), with the per-wording rates also flat. A result in the hypothesised direction but inside the power curve's blind spot is reported as 'not established', not as weak support.",
 
-  "_known_limitation": "Single model route. The corpus prior for Python cannot be separated from the cue within one model (study/DESIGN.md section 10). This batch does not fix that; it is recorded as outstanding."
+  "_known_limitation": "Single model route. The corpus prior for Python cannot be separated from the cue within one model (DESIGN.md section 10). This batch does not fix that; it is recorded as outstanding."
 }

@@ -1,8 +1,8 @@
 {
-  "_what": "The analytic variables. Every column of records/tables/trials.csv that is not a verbatim field of the record is declared here, with its definition and with what it cannot see. analysis/cue_tables.R asserts that this file and the table agree, so a derived variable cannot appear in the code without being declared, and cannot be declared without being produced.",
+  "_what": "The analytic variables. Every column of records/<id>/trials.csv that is not a verbatim field of the record is declared here, with its definition and with what it cannot see. analysis/cue_tables.R asserts that this file and the table agree, so a derived variable cannot appear in the code without being declared, and cannot be declared without being produced.",
   "_why": "The inputs of this study are declared (task, schema, criteria, conditions, interpreters). The outcomes derived FROM those inputs were not, and they were living inside a sequence of dplyr::mutate() calls. Two of them require a judgement that a reader would otherwise have to reverse-engineer: what counts as the first runtime, and whether a mixed trial is a separate kind of observation. A definition that only exists in code is a definition only its author can audit.",
   "_read_by": "analysis/cue_tables.R (asserts coverage), analysis/cue_report.R (consumes), analysis/cue_effect.py (recomputes first_runtime independently -- by design, two implementations that must agree)",
-  "_not_here": "Pass/fail is not a feature of this layer: it belongs to study/criteria/ and is carried in as the `verdict` column without being recomputed.",
+  "_not_here": "Pass/fail is not a feature of this layer: it belongs to criteria/ and is carried in as the `verdict` column without being recomputed.",
 
   "base_columns": {
     "_what": "Columns copied verbatim from records/tables/observations.csv, listed so that anything else in trials.csv has to be declared below.",
@@ -25,7 +25,7 @@
       "name": "wording",
       "definition": "slot with its replicate suffix removed (the trailing -<digits>).",
       "derived_from": "slot",
-      "cannot_see": "Nothing. It is a pure string operation, and it is checked against study/conditions.json rather than trusted.",
+      "cannot_see": "Nothing. It is a pure string operation, and it is checked against conditions.json rather than trusted.",
       "role": "identity of the cluster -- the unit the permutation test permutes"
     },
     {
@@ -37,15 +37,15 @@
     },
     {
       "name": "condition",
-      "definition": "The condition that claims this wording, from study/conditions.json.",
-      "derived_from": "wording + study/conditions.json",
+      "definition": "The condition that claims this wording, from conditions.json.",
+      "derived_from": "wording + conditions.json",
       "cannot_see": "Whether the subject read the name as belonging to that category. The classification is ours; what the model inferred is the thing being estimated.",
       "role": "the treatment"
     },
     {
       "name": "plan_order",
       "definition": "The order this trial had in the pre-registered plan.",
-      "derived_from": "records/plan/<plan_id>.jsonl, joined on slot",
+      "derived_from": "records/<id>/plan/<plan_id>.jsonl, joined on slot",
       "cannot_see": "The order trials actually started in. That is a separate measurement (tools/order_fidelity.py, from startedAt) and the two agreeing is a result, not an assumption.",
       "role": "block structure and provenance"
     },
@@ -59,7 +59,7 @@
     {
       "name": "first_runtime",
       "definition": "The runtime named by the EARLIEST executed tool call whose arguments name any runtime: R, python, or none if no call names one. Calls that name no runtime are skipped, not counted as none -- reading a file before deciding how to compute is not a choice of runtime.",
-      "derived_from": "records/tables/calls.csv + study/interpreters.json",
+      "derived_from": "records/tables/calls.csv + interpreters.json",
       "cannot_see": [
         "Whether that runtime was used successfully. A trial that tried R, failed, and fell back to python is recorded as R; the fallback is visible in the call table but is not collapsed into this variable.",
         "An invocation from a mention. A comment, filename or string literal naming python counts, which is why the matched call is printed beside every count in analysis/process_report.py rather than trusted.",
@@ -70,7 +70,7 @@
     {
       "name": "runtimes_seen",
       "definition": "Every runtime named anywhere in the trial's executed calls, sorted and joined with '+'. Empty when no call names one.",
-      "derived_from": "calls.csv + study/interpreters.json",
+      "derived_from": "calls.csv + interpreters.json",
       "cannot_see": "Order or frequency. It answers 'was more than one named', nothing finer.",
       "role": "corroboration for first_runtime"
     },
@@ -98,7 +98,7 @@
     {
       "name": "verdict",
       "definition": "The status this trial received from tools/grade.py under the criteria file the prereg names.",
-      "derived_from": "records/judgment/<criteria_id>.json, joined on run_id",
+      "derived_from": "records/<id>/judgment/<criteria_id>.json, joined on run_id",
       "cannot_see": "Whether the six numbers were computed or recalled. That is a separate question with its own reading (zero_tool), and the criteria file says so in its known_limits.",
       "role": "secondary outcome, never the primary claim"
     }

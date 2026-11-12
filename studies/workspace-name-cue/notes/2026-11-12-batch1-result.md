@@ -41,7 +41,7 @@
 
 ### 4. 一个自己造成的缺陷，被宿主抓到了
 
-28 次调用里我手打了 28 份 schema。第 1 份是 `{type, properties, required}`（与 `study/tasks/wells-meansd.json` 一致），第 2 份起变成 `{properties, required, type}`。语义相同，**交付的字节不同**。
+28 次调用里我手打了 28 份 schema。第 1 份是 `{type, properties, required}`（与 `tasks/wells-meansd.json` 一致），第 2 份起变成 `{properties, required, type}`。语义相同，**交付的字节不同**。
 
 - 我们自己的规范哈希（`sort_keys`）看不见：`schema_sha` 28 条全是 `c920a8f49e94`。
 - 宿主的 `toolSchemaDigest` 看得见：`25b8fa3e`（python-01，1 条）vs `8cacc1d6`（其余 27 条）。
@@ -52,11 +52,11 @@
 
 ## 支撑的决策
 
-- [跑批清单](../../tools/batch_plan.py) 的 `delivered_by_host()`：比较臂之间是否收到同样的字节，用宿主的摘要而不是我们的。
+- [跑批清单](../../../tools/batch_plan.py) 的 `delivered_by_host()`：比较臂之间是否收到同样的字节，用宿主的摘要而不是我们的。
 - 第二批（`letter` 家族）的 k 按本批实测率重算，不沿用 0.4 的假设。
 
 ## 影响
 
-- `records/plan/wells-meansd-k7-e4ebb4165f7a.jsonl` 是这批的完整顺序与 cwd；`records/ws/<slot>.{create,after}.json` 是 28 个槽位的前后树哈希（全部 2 文件、树哈希一致——没有一个试次在工作区留下东西）。
+- `records/workspace-name-cue/plan/wells-meansd-k7-e4ebb4165f7a.jsonl` 是这批的完整顺序与 cwd；`records/workspace-name-cue/ws/<slot>.{create,after}.json` 是 28 个槽位的前后树哈希（全部 2 文件、树哈希一致——没有一个试次在工作区留下东西）。
 - 宿主已还原：`--check` 读 original，包目录只剩 `index.js` 与 `types/`。
 - 这条不能证明"目录名会改变 agent 的语言选择"。它能证明的是：该问的量已经进了记录、操纵已确认送达、效应量比预想的小——第二批该投多少试次，现在有依据了。

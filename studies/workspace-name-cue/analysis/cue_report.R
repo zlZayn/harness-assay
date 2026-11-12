@@ -3,7 +3,7 @@
 #
 # Reads `trials.csv` and nothing else. Every number printed here is a restatement or an
 # estimate of the same 288 trials; the pre-registered test itself lives in
-# `analysis/cue_effect.py`, which enumerates the exact permutation distribution instead of
+# `studies/<id>/analysis/cue_effect.py`, which enumerates the exact permutation distribution instead of
 # approximating it. This file answers the questions a permutation p-value does not:
 #
 #   - how wide is the difference, not just how unlikely under the null
@@ -37,11 +37,15 @@ suppressPackageStartupMessages({
 
 source("analysis/theme_assay.R")
 
-trials <- read_csv("records/tables/trials.csv", show_col_types = FALSE, progress = FALSE)
+STUDY  <- "studies/workspace-name-cue"
+REC    <- file.path("records", basename(STUDY))
+TRIALS <- file.path(REC, "trials.csv")
+
+trials <- read_csv(TRIALS, show_col_types = FALSE, progress = FALSE)
 raw_n  <- nrow(read_csv("records/tables/observations.csv",
                         show_col_types = FALSE, progress = FALSE))
 
-FIG <- "records/figures"
+FIG <- file.path(REC, "figures")
 dir.create(FIG, recursive = TRUE, showWarnings = FALSE)
 
 PRIMARY <- c("r-eco", "software")
@@ -252,10 +256,10 @@ p_contrast <- by_wording |>
   scale_x_continuous(labels = percent, breaks = seq(0, 1, 0.25)) +
   coord_cartesian(xlim = c(-0.26, 1.30), clip = "off") +
   labs(
-    title = "An R package name in the folder name moves the choice of runtime by 26 points",
-    subtitle = "A dot is one folder name, six trials; the bar is a 95% bootstrap over the names.",
+    title = "An R package name in the workspace name moves the choice of runtime by 26 points",
+    subtitle = "A dot is one workspace name, six trials; the bar is a 95% bootstrap over the names.",
     x = "share of trials whose first runtime was R", y = NULL,
-    caption = assay_source("records/tables/trials.csv", nrow(trials))
+    caption = assay_source(TRIALS, nrow(trials))
   ) +
   assay_theme()
 
@@ -303,7 +307,7 @@ p_rank <- ggplot(ranked, aes(p_r, label)) +
     subtitle = sprintf("The contrast's 24 names, ranked; dashed rules are the two means. %d of 12 r-eco reach 3-in-6, %d of 12 software do.",
                        high_a, high_b),
     x = "share of trials whose first runtime was R", y = NULL,
-    caption = assay_source("records/tables/trials.csv", nrow(trials))
+    caption = assay_source(TRIALS, nrow(trials))
   ) +
   assay_theme()
 
@@ -334,7 +338,7 @@ p_blocks <- by_round |>
     title = "All six blocks point the same way",
     subtitle = "Each block is a full replicate of the design; the number is the gap, in points.",
     x = "share of trials whose first runtime was R", y = NULL,
-    caption = assay_source("records/tables/trials.csv", nrow(trials))
+    caption = assay_source(TRIALS, nrow(trials))
   ) +
   assay_theme()
 

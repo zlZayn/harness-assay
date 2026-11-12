@@ -1,8 +1,8 @@
 """Declare the cue arms by measured token cost, with the tokenizer named and pinned.
 
-Run once, paste-free: this writes study/cue-arms.json, which is the declaration of record.
+Run once, paste-free: this writes arms.json, which is the declaration of record.
 
-    uv run --with tiktoken==0.12.0 python analysis/cue_tokens.py
+    uv run --with tiktoken==0.12.0 python studies/<id>/analysis/cue_tokens.py
 
 Why a proxy tokenizer is honest here and a "same length" rule is not: the subject runs on
 DeepSeek's own tokenizer, which is not published. What matters for the design is the *cost*
@@ -30,7 +30,9 @@ import tiktoken
 ENCODING = "o200k_base"
 TOKENIZER = "tiktoken"
 VERSION = tiktoken.__version__
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+# This script belongs to one study, so it names its own directory once.
+STUDY = pathlib.Path(__file__).resolve().parent.parent
+ROOT  = STUDY.parent.parent
 
 # Where slots will live. Never a literal: the token cost depends on this prefix, so the
 # declaration records which root it was counted for. Set ASSAY_SLOTS or --slots.
@@ -54,9 +56,9 @@ CANDIDATES = [
     ("hedgerow-01", None,       "lang",     "neutral, similar token cost to tidyverse"),
 ]
 
-# The four-condition design reads its wordings from study/conditions.json, so the words
+# The four-condition design reads its wordings from conditions.json, so the words
 # live in one place. This file only adds the measured cost of each one.
-CONDITIONS = ROOT / "study" / "conditions.json"
+CONDITIONS = STUDY / "conditions.json"
 IMPLIED_CUE = {"r-eco": "r", "py-eco": "python", "software": None, "plain": None}
 
 
@@ -139,7 +141,7 @@ def main() -> int:
         "arms": rows,
     }
 
-    out = ROOT / "study" / "cue-arms.json"
+    out = STUDY / "arms.json"
     out.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
     print(f"tokenizer {TOKENIZER} {VERSION} / {ENCODING}   (proxy for the subject's own)\n")

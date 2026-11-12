@@ -1,0 +1,18 @@
+{
+  "study_id": "workspace-name-cue",
+  "question": "Does a single word in the workspace's name change which runtime an agent reaches for?",
+  "_why_this_name": "`workspace` is this repo's own word for the directory a subject is placed in (workspace.py, ws-template, the record's workspace.cwd_name / cwd_injected). The thing varied is that name's lexical content, and it arrives through an injected notice rather than through the task -- which is what `cue` means everywhere else in this repo. The name identifies the exposure, not the outcome; a second study could reuse the same exposure against a different outcome without inheriting this directory.",
+  "_what": "The manifest the record-layer tools read. Tools know this SHAPE, not this study: arms, tasks and template are found by these keys, so a second study plugs in by writing its own file.",
+  "arms": "arms.json",
+  "tasks": "tasks",
+  "template": "ws-template",
+  "declarations": {
+    "conditions": "conditions.json",
+    "interpreters": "interpreters.json",
+    "lexicon": "lexicon.json",
+    "features": "features.json",
+    "expectations": "expectations.json"
+  },
+  "analysis": "analysis",
+  "records": "records"
+}

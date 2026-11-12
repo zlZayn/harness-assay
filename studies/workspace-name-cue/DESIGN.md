@@ -1,6 +1,6 @@
 # 实验设计的统计原理
 
-本文只写**为什么这样设计才推得出东西**。跑什么、判什么、词表是什么见 [README.md](README.md)，不可破坏的约束见 [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)。
+本文只写**为什么这样设计才推得出东西**。跑什么、判什么、词表是什么见 [研究README](README.md)，不可破坏的约束见 [架构文档](../../docs/ARCHITECTURE.md)。
 
 ## 1. 估计量：先把要估的东西定死
 
@@ -129,7 +129,7 @@
 
 只要 `ε_k < 容差 < ε_k1`，正确舍到 k 位的答案必过、k−1 位的必拒。可以逐字段验证。
 
-`study/criteria/v1.json` 对 Welch p 值用的就是这个方法的单字段版本；Norris 六个字段是同一方法的多字段版本。**这套推导要写进依据（`tolerance_notes`），不能只留数字。**
+`criteria/v1.json` 对 Welch p 值用的就是这个方法的单字段版本；Norris 六个字段是同一方法的多字段版本。**这套推导要写进依据（`tolerance_notes`），不能只留数字。**
 
 ## 8. 威胁清单与对策
 
