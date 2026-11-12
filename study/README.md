@@ -10,6 +10,7 @@
 |---|---|---|
 | `DESIGN.md` | 统计设计：估计量、三条禁忌、量程受限、预注册 | 人；改设计前必读 |
 | `prereg/<id>.json` | 开跑前写死：题、臂、措辞、k、对比、判定规则、`plan_id` | 人；跑批前必读，跑完必对照 |
+| `conditions.json` | 四条件的措辞表（每条件 12 个词，全 11 token） | `analysis/cue_tokens.py` → 臂表 |
 | `expectations.json` | 已知识别关系的断言对（折叠 / 分开） | `tools/verify_index.py` |
 | `criteria/<ver>.json` | 真值、容差、以及容差自己的已知漏洞 | `tools/grade.py` |
 | `cue-arms.json` | 臂表：按实测 token 声明，含切分器与版本 | `tools/batch_plan.py`、`analysis/cue_tokens.py` |

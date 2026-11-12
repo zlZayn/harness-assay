@@ -1,0 +1,104 @@
+{
+  "prereg_id": "norris-r3-v1",
+  "status": "declared, not yet run",
+  "_supersedes": "norris-r2-v1.json (48 trials, 2 conditions, k=8). Superseded because that design had three defects: three wordings per condition makes the wording-level test powerless by construction (minimum attainable p = 1/20), a single relative tolerance could not judge six significant digits, and two conditions cannot separate 'names R' from 'looks like software'.",
+  "_what": "Everything that must be decided before the batch runs. Commit this file, then run. If any of it changes, plan_id changes and the change is visible in history.",
+
+  "plan_id": "norris-ols-k6-7a8e2a45c2f1",
+  "_plan_id_note": "sha of (arm table + prompt + schema + 'rep-major'). Reproduce with: python tools/batch_plan.py --task norris-ols --k 6 --family r-eco,py-eco,software,plain",
+
+  "task": "norris-ols",
+  "criteria": "study/criteria/norris-v1.json",
+  "conditions_source": "study/conditions.json",
+  "arms_source": "study/cue-arms.json",
+
+  "design": {
+    "conditions": ["r-eco", "py-eco", "software", "plain"],
+    "wordings_per_condition": 12,
+    "replicates_per_wording": 6,
+    "trials": 288,
+    "order": "rep-major: six rounds of 48, one of every wording per round",
+    "token_matching": "all 48 wordings cost exactly 11 path tokens"
+  },
+
+  "execution": {
+    "_why_chunked": "288 trials in one go is one long opportunity to fail silently. Each chunk is a complete balanced replicate of the design -- all four conditions, all 48 wordings -- so a chunk that finishes is a usable experiment, and a chunk that goes wrong can be discarded without biasing anything.",
+    "sub_batches": [
+      { "n": 1, "orders": [1, 96], "trials": 96, "rounds": [1, 2] },
+      { "n": 2, "orders": [97, 192], "trials": 96, "rounds": [3, 4] },
+      { "n": 3, "orders": [193, 288], "trials": 96, "rounds": [5, 6] }
+    ],
+    "host_window": "opened and closed per sub-batch, never left open between them: --apply --expect patched, reload, run, --revert --expect original, reload, --check must read original with no backup",
+    "gate_after_each_sub_batch": [
+      "exposure_check must PASS",
+      "batch_plan --verify must report no new problem",
+      "host --check must read original and the package directory must hold only what npm installed"
+    ]
+  },
+
+  "analysis": {
+    "outcome": "Y = the first executed tool call whose arguments name a runtime, reduced to {R, python, shell, none}. shell and none count as 'not R'. Script extension (.R/.py) is recorded as corroboration and its agreement rate is reported, not substituted.",
+    "classification": "study/interpreters.json, unchanged since batch 1",
+    "primary": {
+      "contrast": "P(Y=R | r-eco) - P(Y=R | software)",
+      "test": "wording-level permutation over the 24 wordings, C(24,12) label assignments, one-sided",
+      "_why_this_contrast": "Both sides are software project names, so 'looks like a software project' is held constant and the only thing that varies is whether the name belongs to R.",
+      "_why_wording_level": "The treatment is applied to a wording, so the wording is the cluster. A trial-level test is exact for the sharp null but its inference stops at the wordings actually used."
+    },
+    "secondary": [
+      "P(Y=python | py-eco) - P(Y=python | software) -- the same question in the other direction",
+      "P(Y=R | r-eco) - P(Y=R | plain) -- total effect against a name with no software meaning",
+      "P(Y in {R,python} | software) - P(Y in {R,python} | plain) -- does software flavour alone make it reach for a runtime",
+      "per-wording rates, all 48, printed -- these are what reveal how much wordings actually differ",
+      "zero-tool-call rate, shell rate, mixed rate per condition",
+      "correctness: how many of the six quantities land inside study/criteria/norris-v1.json (secondary outcome, never primary)"
+    ],
+    "trial_level_test": "reported alongside as a secondary reading, with its scope stated as 'these 12 wordings'",
+    "_not_analysed": [
+      "no cue-vs-cue ordering of conditions by size",
+      "no stratification on 'used a runtime at all' -- post-treatment",
+      "no exclusion of zero-tool-call trials -- post-treatment",
+      "no post-hoc dropping of wordings that behaved oddly"
+    ]
+  },
+
+  "power_analysis": {
+    "_kind": "assumption declared in advance; no outcome data was read to produce it",
+    "assumed_baseline": 0.10,
+    "assumed_cue_rate": 0.40,
+    "wordings_per_condition": 12,
+    "replicates_per_wording": 6,
+    "wording_level_power": {
+      "tau=0.10": 0.96,
+      "tau=0.15": 0.88,
+      "tau=0.20": 0.80
+    },
+    "false_positive_rate": "0.02-0.04 at tau=0.15, i.e. at or below nominal 0.05",
+    "_why_twelve_not_eight": "Wordings dominate power; replicates only add resolution. At 8 wordings with 6 replicates the power at tau=0.20 is 0.61. At 12 it is 0.80. At 16 it is 0.88, which is not worth another 96 trials.",
+    "_why_six_not_three": "With 3 replicates a wording's rate can only be 0, 1/3, 2/3 or 1, so the permutation test ties enormously and loses resolution. The gain from 3 to 6 replicates is larger than the gain from 6 to 8.",
+    "_honest_reading": "Well powered for a 0.10 -> 0.40 shift; roughly 0.60 for a 0.10 -> 0.30 shift. If wordings differ more than tau=0.20 the batch is underpowered and the per-wording rates will show it."
+  },
+
+  "decision_rules": {
+    "_why": "Stated now so they are rules about the instrument, not exclusions chosen after seeing results.",
+    "instrument_checks_between_sub_batches": "PERMITTED, and only these: zero-tool-call rate, shell rate, runtime-use rate, error/stop-reason counts, exposure gate, host cleanliness. These are checked after each sub-batch.",
+    "outcome_checks_between_sub_batches": "NOT PERMITTED. The condition contrast is computed once, after the last sub-batch. Looking early and stopping on a promising result inflates the false positive rate.",
+    "stop_if": [
+      "zero-tool-call rate above 1/3 overall -- the task is being recalled, not computed. Mark exploratory, report no cue effect, switch dataset. The trials are NOT removed; they count as 'not R'.",
+      "runtime-use rate below 2/3 -- the contrast is diluted, not biased. Report it and state the effective sample is below 288.",
+      "the exposure gate fails or a delivery check disagrees -- stop, fix the environment, discard the affected sub-batch and rerun it."
+    ],
+    "discarding_a_sub_batch": "only allowed for instrument failure identified by the checks above, never for its outcome, and the reason is recorded in .agents/notes/ at the time",
+    "mixed_trials": "counted by first runtime; the mixed count is always reported beside the primary table",
+    "deviation": "any departure from this file is recorded in a note under .agents/notes/ when it happens"
+  },
+
+  "_what_would_falsify_the_hypothesis": "P(Y=R | r-eco) not above P(Y=R | software), with the 12 r-eco wordings' individual rates also flat. A result in the hypothesised direction but inside the power curve's blind spot is reported as 'not established', not as weak support.",
+
+  "_known_limitations": [
+    "Single model route. The corpus prior for Python cannot be separated from the cue within one model; only cross-model replication does that.",
+    "Word frequency in English is not matched across conditions and cannot be: dplyr is a rarer string than marlow. Reported, not engineered away.",
+    "The py-eco condition may sit at a ceiling if the task defaults to Python. If so, its contrast is uninformative for mechanical reasons and must not be read as 'the Python cue does nothing'.",
+    "Judge asks for six quantities at six significant digits; a subject that truncates rather than rounds can land on either side of the R2 threshold. Recorded in the criteria file's known_limits."
+  ]
+}

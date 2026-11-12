@@ -81,61 +81,481 @@
       "delta_vs_shortest": 1
     },
     {
-      "slot": "marlow-01",
+      "slot": "ashby-01",
       "cue": null,
-      "family": "placebo",
-      "note": "neutral, similar length to dplyr",
-      "chars": 24,
-      "tokens": 11,
-      "cue_tokens": 0,
-      "delta_vs_shortest": 2
-    },
-    {
-      "slot": "fenwick-01",
-      "cue": null,
-      "family": "placebo",
-      "note": "neutral, similar length to ggplot",
-      "chars": 25,
-      "tokens": 11,
-      "cue_tokens": 0,
-      "delta_vs_shortest": 2
-    },
-    {
-      "slot": "orwell-01",
-      "cue": null,
-      "family": "placebo",
-      "note": "neutral, similar length to tidyr",
-      "chars": 24,
-      "tokens": 11,
-      "cue_tokens": 0,
-      "delta_vs_shortest": 2
-    },
-    {
-      "slot": "dplyr-01",
-      "cue": "dplyr",
-      "family": "r-eco",
-      "note": "R package name",
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
       "chars": 23,
       "tokens": 11,
-      "cue_tokens": 3,
+      "cue_tokens": 2,
       "delta_vs_shortest": 2
     },
     {
-      "slot": "ggplot-01",
-      "cue": "ggplot",
-      "family": "r-eco",
-      "note": "R package name",
+      "slot": "ashdown-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "beckworth-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 27,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "brandon-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "corbin-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
       "chars": 24,
       "tokens": 11,
       "cue_tokens": 2,
       "delta_vs_shortest": 2
     },
     {
-      "slot": "tidyr-01",
-      "cue": "tidyr",
-      "family": "r-eco",
-      "note": "R package name",
+      "slot": "fenwick-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "harwood-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "larkin-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "marlow-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "orwell-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "penshaw-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "radley-01",
+      "cue": null,
+      "family": "plain",
+      "note": "English place and family names: plausible as a project folder, no software meaning",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "altair-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "jupyter-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "matplotlib-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 28,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "networkx-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 26,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "pandas-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "pillow-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "plotly-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "polars-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "scipy-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
       "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "sklearn-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "statsmodels-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 29,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "sympy-01",
+      "cue": "python",
+      "family": "py-eco",
+      "note": "software names that are Python packages",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "dplyr-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 3,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "forcats-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "ggplot-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "glue-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 22,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "knitr-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "patchwork-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 27,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "purrr-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "readr-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "rlang-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "scales-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "shiny-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "stringr-01",
+      "cue": "r",
+      "family": "r-eco",
+      "note": "software names that are R packages",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "ansible-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "cilium-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "consul-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "etcd-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 22,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "gitlab-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "grafana-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "istio-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "jenkins-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "kafka-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "minio-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "nginx-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "prometheus-01",
+      "cue": null,
+      "family": "software",
+      "note": "software names that are neither an analysis language nor a library for one",
+      "chars": 28,
       "tokens": 11,
       "cue_tokens": 2,
       "delta_vs_shortest": 2

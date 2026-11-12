@@ -43,7 +43,8 @@ if not BASE:
         "  the token cost of an arm depends on this prefix, so it has to be stated, not assumed"
     )
 
-# candidate slot names; `role` says what each one is supposed to be able to show
+# Legacy arms from the first batch. Frozen: batch 1's plan_id depends on these being
+# exactly as they were, so they are kept even though no new trials will use them.
 CANDIDATES = [
     ("r-01",       "r",         "letter",   "single letter; ambiguous between the language and a letter"),
     ("q-01",       None,        "letter",   "neutral letter control at the same name length"),
@@ -51,16 +52,12 @@ CANDIDATES = [
     ("cobden-01",  None,        "lang",     "neutral, similar token cost to python"),
     ("tidyverse-01", "tidyverse", "lang",   "explicit package name; also a language pointer"),
     ("hedgerow-01", None,       "lang",     "neutral, similar token cost to tidyverse"),
-    # One word per condition is n=1 wording: the result would be about that string, not
-    # about the category. These give each condition three wordings so the wording can be
-    # treated as a block/random effect (study/DESIGN.md section 5).
-    ("dplyr-01",    "dplyr",    "r-eco",    "R package name"),
-    ("ggplot-01",   "ggplot",   "r-eco",    "R package name"),
-    ("tidyr-01",    "tidyr",    "r-eco",    "R package name"),
-    ("marlow-01",   None,       "placebo",  "neutral, similar length to dplyr"),
-    ("fenwick-01",  None,       "placebo",  "neutral, similar length to ggplot"),
-    ("orwell-01",   None,       "placebo",  "neutral, similar length to tidyr"),
 ]
+
+# The four-condition design reads its wordings from study/conditions.json, so the words
+# live in one place. This file only adds the measured cost of each one.
+CONDITIONS = ROOT / "study" / "conditions.json"
+IMPLIED_CUE = {"r-eco": "r", "py-eco": "python", "software": None, "plain": None}
 
 
 def main() -> int:
@@ -83,6 +80,30 @@ def main() -> int:
             "tokens": count(path),
             "cue_tokens": count(cue) if cue else 0,
         })
+
+    # The four-condition design: one arm per wording, cost measured the same way.
+    conditions = json.loads(CONDITIONS.read_text(encoding="utf-8"))
+    for name, spec in conditions["conditions"].items():
+        for word in spec["words"]:
+            slot = f"{word}-01"
+            path = f"{BASE}\\{slot}"
+            rows.append({
+                "slot": slot,
+                "cue": IMPLIED_CUE[name],
+                "family": name,
+                "note": spec["is"],
+                "path": path,
+                "chars": len(path),
+                "tokens": count(path),
+                "cue_tokens": count(word),
+            })
+
+    seen = {}
+    for r in rows:
+        if r["slot"] in seen:
+            raise SystemExit(f"duplicate slot across families: {r['slot']} "
+                             f"({seen[r['slot']]} and {r['family']})")
+        seen[r["slot"]] = r["family"]
 
     shortest = min(r["tokens"] for r in rows)
     for r in rows:

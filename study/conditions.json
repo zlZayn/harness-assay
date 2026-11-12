@@ -1,0 +1,64 @@
+{
+  "_what": "The four conditions of the second batch, one row per condition. Wordings live here because they are study knowledge; the record layer only ever sees a path.",
+
+  "_why_four": "Two conditions (naming R vs naming nothing) differ in two things at once: the name points at R, and the folder looks like a software project. The software condition separates them, so the primary contrast can hold 'looks like software' constant and vary only 'is it R'. Without it the honest conclusion is only 'software-flavoured names raise R use', which is a different claim.",
+
+  "tokenizer": {
+    "name": "tiktoken",
+    "version": "0.12.0",
+    "encoding": "o200k_base",
+    "_caveat": "proxy for the subject's tokenizer, as in cue-arms.json. Used here only to MATCH conditions, not to measure an effect."
+  },
+  "unit": "the full slot path as it reaches the subject, prefix + '/' + <word> + '-' + replicate",
+  "slots_root": "D:\\assay\\slots",
+  "_matching": "Every one of the 48 wordings costs exactly 11 path tokens. Nothing was swapped after any outcome was seen: the words were chosen from their cost and their meaning alone, before the batch.",
+
+  "words_per_condition": 12,
+  "replicates_per_wording": 6,
+  "trials": 288,
+
+  "conditions": {
+    "r-eco": {
+      "words": ["dplyr", "forcats", "ggplot", "glue", "knitr", "patchwork",
+                "purrr", "readr", "rlang", "scales", "shiny", "stringr"],
+      "is": "software names that are R packages",
+      "tokens": 11
+    },
+    "py-eco": {
+      "words": ["altair", "jupyter", "matplotlib", "networkx", "pandas", "pillow",
+                "plotly", "polars", "scipy", "sklearn", "statsmodels", "sympy"],
+      "is": "software names that are Python packages",
+      "tokens": 11
+    },
+    "software": {
+      "words": ["ansible", "cilium", "consul", "etcd", "gitlab", "grafana",
+                "istio", "jenkins", "kafka", "minio", "nginx", "prometheus"],
+      "is": "software names that are neither an analysis language nor a library for one",
+      "tokens": 11
+    },
+    "plain": {
+      "words": ["ashby", "ashdown", "beckworth", "brandon", "corbin", "fenwick",
+                "harwood", "larkin", "marlow", "orwell", "penshaw", "radley"],
+      "is": "English place and family names: plausible as a project folder, no software meaning",
+      "tokens": 11
+    }
+  },
+
+  "primary_contrast": {
+    "a": "r-eco",
+    "b": "software",
+    "outcome": "P(Y = R)",
+    "_why": "Both sides look like a software project folder. The only thing that differs is whether the name belongs to R. This is the sharpest available statement of 'the cue is about the language', and it is the one the batch is powered for."
+  },
+
+  "secondary_contrasts": [
+    { "a": "py-eco", "b": "software", "outcome": "P(Y = python)", "_why": "the same question in the other direction" },
+    { "a": "r-eco", "b": "plain", "outcome": "P(Y = R)", "_why": "total effect of naming R against naming nothing" },
+    { "a": "software", "b": "plain", "outcome": "P(Y = R or python)", "_why": "does software flavour alone make it reach for a runtime at all" }
+  ],
+
+  "_known_imbalance": [
+    "The r-eco and py-eco words are package names; the plain words are personal and place names. That is unavoidable if the plain words are to carry no software meaning, and it means 'package-like' is not fully separated from 'names a language'. The software condition absorbs most of it, since its words are product names too.",
+    "Word frequency in English is not matched and cannot be: dplyr is a rarer string than marlow. This is a limitation of every naming cue, and it is reported rather than engineered away."
+  ]
+}

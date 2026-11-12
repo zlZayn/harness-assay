@@ -1,6 +1,7 @@
 {
   "prereg_id": "norris-r2-v1",
-  "status": "declared, not yet run",
+  "status": "superseded by norris-r3-v1.json",
+  "_superseded_why": "Three defects, found by putting the design through a simulation before running it. (1) Three wordings per condition makes the wording-level test powerless by construction: C(6,3)=20 label assignments, so the smallest attainable p is 0.05 and the test can never fire -- measured power exactly 0.00. (2) One shared relative tolerance cannot judge six significant digits, because the same digit count means different relative errors at different mantissas. (3) Two conditions cannot separate 'names R' from 'looks like a software project'. The replacement uses 4 conditions x 12 wordings x 6 replicates.",
   "_what": "Everything that must be decided before the batch runs, written down so it cannot be decided afterwards. commit this file, then run. If any of it changes, the plan_id changes and the change is visible in history.",
 
   "plan_id": "norris-ols-k8-93989b5a88ab",
