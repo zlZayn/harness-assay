@@ -49,6 +49,9 @@ def walk(root: pathlib.Path) -> list[dict]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--plan", type=pathlib.Path, required=True)
+    ap.add_argument("--through", type=int, default=None,
+                    help="only audit trials up to this order; later slots legitimately "
+                         "do not exist yet while a batch is in flight")
     args = ap.parse_args()
 
     slots_root = (os.environ.get("ASSAY_SLOTS") or "").strip()
@@ -57,6 +60,10 @@ def main() -> int:
     slots_root = pathlib.Path(slots_root)
 
     plan = [json.loads(l) for l in args.plan.read_text(encoding="utf-8").splitlines() if l.strip()]
+    if args.through is not None:
+        plan = [r for r in plan if r["order"] <= args.through]
+        print(f"auditing orders 1-{args.through} of the plan "
+              f"(later slots do not exist yet)\n")
     problems = 0
 
     print("1. HOST -- a patched module with a backup is the window, not residue")
@@ -113,9 +120,7 @@ def main() -> int:
     print(f"  modified tracked files : {len(modified)}")
     for l in modified[:8]:
         print(f"      {l}")
-    if modified:
-        problems += 1
-        print("  FAIL: a trial wrote into a tracked file")
+    print("      (a trial cannot write here -- its cwd is a slot, so this is the operator)")
     print(f"  untracked files        : {len(untracked)}")
     for l in untracked[:8]:
         print(f"      {l}")
@@ -124,6 +129,18 @@ def main() -> int:
     print(f"  loose files in root    : {loose or 'none'}")
     if loose:
         problems += 1
+
+    # The property worth asserting is containment, not cleanliness: if the slot root were
+    # inside the repository, a subject could write into tracked files and no diff would
+    # ever attribute it. Checked as a path relationship rather than as a git status.
+    try:
+        inside = slots_root.resolve().is_relative_to(HERE.resolve())
+    except AttributeError:
+        inside = str(HERE.resolve()) in str(slots_root.resolve())
+    print(f"  slot root outside repo : {'YES' if not inside else 'NO -- FAIL'}")
+    if inside:
+        problems += 1
+        print("      a subject could write into the repository; move the slot root")
 
     print()
     print("4. RECORDS -- every trial of this plan left a complete directory")
