@@ -196,6 +196,13 @@ def main() -> int:
                 path.write_bytes(backup.read_bytes())
                 print(f"{path}\n  reverted byte-for-byte from {backup.name}")
 
+            # A backup left behind is residue too. Once the file hashes to a known stock
+            # state the backup cannot add anything, so closing the window removes it and
+            # the host directory goes back to having exactly the files npm installed.
+            if clean(path) and backup.exists():
+                backup.unlink()
+                print("  backup removed: the host directory holds only what npm installed")
+
         final = state_of(path)
         if args.expect and final != args.expect:
             print(f"  EXPECTED {args.expect}, found {final}", file=sys.stderr)
