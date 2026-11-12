@@ -13,7 +13,7 @@ Expectation kinds:
 A run is named by any unique suffix of run_id, plus an optional ":trial" suffix.
 
 Usage:
-    python verify_index.py --index records/index.jsonl --expect study/expectations.json
+    python verify_index.py --index records/index.jsonl --expect studies/<id>/expectations.json
 """
 
 from __future__ import annotations

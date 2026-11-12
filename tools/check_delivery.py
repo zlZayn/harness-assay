@@ -4,13 +4,30 @@ The prompt and the output schema have to be re-typed into every harness_run call
 call is an independent chance to drift -- and drift is invisible to our canonical hash.
 This is the check that made the difference between catching it after 2 trials and after 28.
 """
+import argparse
 import hashlib
 import json
 import os
+import pathlib
 import sys
 
-RUNS = r'C:\Users\speak\.dsh\harness-dispatcher\runs'
-PLAN = r'D:\RDirectory\harness-assay\records\plan\norris-ols-k6-7a8e2a45c2f1.jsonl'
+DEFAULT_RUNS = pathlib.Path(os.environ.get("DSH_HOME") or pathlib.Path.home() / ".dsh") \
+    / "harness-dispatcher" / "runs"
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--plan", required=True, type=pathlib.Path,
+                help="the plan the batch is running under")
+ap.add_argument("--root", type=pathlib.Path, default=DEFAULT_RUNS,
+                help="where the dispatcher keeps its run directories")
+ap.add_argument("--through", type=int, default=None,
+                help="only check trials up to this plan order; later slots have not run yet")
+args = ap.parse_args()
+
+RUNS = args.root
+PLAN = args.plan
+
+if not PLAN.is_file():
+    raise SystemExit(f"no plan at {PLAN}")
 
 plan = {}
 for line in open(PLAN, encoding='utf-8'):
@@ -26,6 +43,8 @@ for d in sorted(os.listdir(RUNS)):
     rj = json.load(open(rj_path, encoding='utf-8'))
     slot = os.path.basename(rj['task']['cwd'])
     if slot not in plan:
+        continue
+    if args.through is not None and plan[slot]['order'] > args.through:
         continue
     trials = os.path.join(p, 'trials.jsonl')
     # a run directory appears at dispatch and its trials.jsonl fills in as trials finish;

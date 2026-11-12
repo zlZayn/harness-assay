@@ -15,7 +15,7 @@ import pathlib
 import sys
 
 PLAN = sys.argv[1] if len(sys.argv) > 1 else \
-    'records/plan/norris-ols-k6-7a8e2a45c2f1.jsonl'
+    'records/<study>/plan/norris-ols-k6-7a8e2a45c2f1.jsonl'
 RUNS = pathlib.Path(os.environ.get("DSH_HOME") or pathlib.Path.home() / ".dsh") \
     / "harness-dispatcher" / "runs"
 

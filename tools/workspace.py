@@ -10,8 +10,8 @@ cannot be replayed.
 Two records per slot, both written with exclusive-create (like the plugin's own run
 directory), so a slot cannot be quietly reused:
 
-    records/ws/<slot>.create.json   what was there before the run
-    records/ws/<slot>.after.json    what the subject left behind
+    records/<study>/ws/<slot>.create.json   what was there before the run
+    records/<study>/ws/<slot>.after.json    what the subject left behind
 
 Usage:
     python workspace.py create   <slot> [--root DIR] [--template DIR]
@@ -26,10 +26,14 @@ import json
 import os
 import pathlib
 import shutil
+import sys
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
-TEMPLATE_DEFAULT = HERE / "study" / "ws-template"
-RECORD_DEFAULT = HERE / "records" / "ws"
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _study  # noqa: E402  (which study -- resolved in one place, not four)
+
+RECORD_DEFAULT = _study.records_dir() / "ws"
 
 
 def default_root() -> pathlib.Path:
@@ -126,7 +130,8 @@ def main() -> int:
     c = sub.add_parser("create")
     c.add_argument("slot")
     c.add_argument("--root", type=pathlib.Path, default=default_root())
-    c.add_argument("--template", type=pathlib.Path, default=TEMPLATE_DEFAULT)
+    c.add_argument("--template", type=pathlib.Path, default=None,
+                   help="defaults to the template the study's manifest declares")
 
     s = sub.add_parser("snapshot")
     s.add_argument("slot")
@@ -135,7 +140,8 @@ def main() -> int:
 
     args = ap.parse_args()
     if args.cmd == "create":
-        payload = create(args.slot, args.root, args.template)
+        template = args.template or _study.declared("template")
+        payload = create(args.slot, args.root, template)
         print(f"created   {payload['path']}")
         print(f"template  {payload['template_tree_sha']}  ({len(payload['files'])} files)")
     else:

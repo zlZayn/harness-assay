@@ -8,8 +8,8 @@ are cheap and will drift. Keeping the two apart is what lets a later reader re-j
 same measurements under a rule nobody had thought of yet, without paying for them twice.
 
 Reads:   records/tables/observations.csv   (written by analysis/index_tables.R)
-         a criteria JSON                   (study/criteria/*.json)
-Writes:  records/judgment/<criteria_id>.json
+         a criteria JSON                   (<study>/criteria/*.json)
+Writes:  records/<study>/judgment/<criteria_id>.json
 
 The output carries the sha of both inputs. Re-running with the same inputs reproduces it
 byte for byte; re-running with an edited criteria file under the same criteria_id shows up
@@ -20,7 +20,7 @@ Stdlib only, like the rest of the record layer.
 
 Usage:
     python tools/grade.py --observations records/tables/observations.csv \
-                          --criteria study/criteria/v1.json
+                          --criteria studies/<id>/criteria/v1.json
 """
 
 from __future__ import annotations
@@ -33,7 +33,11 @@ import pathlib
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
-OUT_DEFAULT = HERE / "records" / "judgment"
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _study  # noqa: E402  (which study -- resolved in one place, not four)
+
+OUT_DEFAULT = _study.records_dir() / "judgment"
 
 
 def sha_bytes(path: pathlib.Path) -> str:

@@ -75,7 +75,7 @@ BACKUP_SUFFIX = ".bak-assay"
 RELOAD_HINT = (
     "the file is not the host: reload the module for this to take effect\n"
     "  dsh_hot_reload { module: '@deepseek-ai/dsh-working-directory' }\n"
-    "  then: python tools/exposure_check.py --lexicon study/lexicon.json"
+    "  then: python tools/exposure_check.py --lexicon studies/<id>/lexicon.json"
 )
 
 

@@ -14,10 +14,10 @@ So this reports both. A batch where everything is constant PASSES the first chec
 FAILS the second, which is exactly the failure mode of an experiment that quietly stopped
 manipulating anything.
 
-Reads:  records/index.jsonl, records/ws/<slot>.create.json, a plan file
+Reads:  records/index.jsonl, records/<study>/ws/<slot>.create.json, a plan file
 Stdlib only. Writes nothing.
 
-    python tools/audit_controls.py --plan records/plan/<id>.jsonl
+    python tools/audit_controls.py --plan records/<study>/plan/<id>.jsonl
 """
 
 from __future__ import annotations
@@ -25,13 +25,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _study  # noqa: E402  (which study -- resolved in one place, not four)
+
 INDEX = HERE / "records" / "index.jsonl"
-WS = HERE / "records" / "ws"
-TEMPLATE = HERE / "study" / "ws-template"
+WS = _study.records_dir() / "ws"
 
 
 def tree_sha(entries: list[dict]) -> str:
@@ -114,7 +118,7 @@ def main() -> int:
     print()
     print("INITIAL WORKSPACE -- every slot must start from the same bytes")
     print("-" * 78)
-    template_now = tree_sha(walk(TEMPLATE))
+    template_now = tree_sha(walk(_study.declared("template")))
     starts = {}
     for r in mine:
         slot = r["workspace"]["cwd_name"]

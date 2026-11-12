@@ -5,10 +5,11 @@ A batch is expensive and irreversible: each trial is a model call, and a slot is
 So the plan is a file, checked twice -- once when it is made, and again after the batch,
 against what actually landed on disk.
 
-Reads:   study/cue-arms.json      which slots, what each one is meant to test
-         study/tasks/<id>.json    the prompt and schema, as the single source of them
-Writes:  records/plan/<plan_id>.jsonl    one line per trial to run
-         records/plan/<plan_id>.md        the same, for a human to read before approving
+Reads:   <study>/arms.json         which slots, what each one is meant to test
+         <study>/tasks/<id>.json  the prompt and schema, as the single source of them
+         study.json               which study, so this tool names none
+Writes:  records/<study>/plan/<plan_id>.jsonl    one line per trial to run
+         records/<study>/plan/<plan_id>.md        the same, for a human to read before approving
 
 Nothing here calls a model.
 
@@ -32,9 +33,11 @@ import pathlib
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
-ARMS = HERE / "study" / "cue-arms.json"
-TASKS = HERE / "study" / "tasks"
-PLAN_DIR = HERE / "records" / "plan"
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _study  # noqa: E402  (which study -- resolved in one place, not four)
+
+PLAN_DIR = _study.records_dir() / "plan"
 RUNS = pathlib.Path(os.environ.get("DSH_HOME") or pathlib.Path.home() / ".dsh") \
     / "harness-dispatcher" / "runs"
 
@@ -198,7 +201,7 @@ def declared_vs_received(rows: list[dict], recorded: dict[str, list[pathlib.Path
     if len(wrong) > 8:
         print(f"  ... and {len(wrong) - 8} more")
     print("  The plan does not describe what the subject was actually asked.")
-    print("  Re-type the task from study/tasks/, or accept that this batch answers a")
+    print("  Re-type the task from the study's tasks/, or accept that this batch answers a")
     print("  different question than the one the prereg names.")
     return 1
 
@@ -275,7 +278,7 @@ def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Pa
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--task", required=True, help="a file name under study/tasks, without .json")
+    ap.add_argument("--task", required=True, help="a file name under the study's tasks dir")
     ap.add_argument("--k", type=int, default=5, help="replicates per arm")
     ap.add_argument("--family", default="",
                     help="comma-separated families to include; default every arm in the table")
@@ -284,8 +287,8 @@ def main() -> int:
                     help="with --verify: also fail on trials that have not run yet")
     args = ap.parse_args()
 
-    arms = json.loads(ARMS.read_text(encoding="utf-8"))
-    task_path = TASKS / f"{args.task}.json"
+    arms = json.loads(_study.declared("arms").read_text(encoding="utf-8"))
+    task_path = _study.declared("tasks") / f"{args.task}.json"
     if not task_path.exists():
         print(f"no task at {task_path}", file=sys.stderr)
         return 1

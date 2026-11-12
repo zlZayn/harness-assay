@@ -21,7 +21,7 @@ nobody chose.
 Stdlib only.
 
 Usage:
-    python tools/exposure_check.py --lexicon study/lexicon.json [--root RUNS_ROOT]
+    python tools/exposure_check.py --lexicon studies/<id>/lexicon.json [--root RUNS_ROOT]
 """
 
 from __future__ import annotations

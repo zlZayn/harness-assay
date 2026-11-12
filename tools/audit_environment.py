@@ -14,7 +14,7 @@ Separates three things that are easy to confuse:
 Reads the plan, the slots, the host package and git. Writes nothing.
 
     set ASSAY_SLOTS=D:\\assay\\slots
-    python tools/audit_environment.py --plan records/plan/<id>.jsonl
+    python tools/audit_environment.py --plan records/<study>/plan/<id>.jsonl
 """
 
 from __future__ import annotations
@@ -28,7 +28,10 @@ import subprocess
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
-TEMPLATE = HERE / "study" / "ws-template"
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _study  # noqa: E402  (which study -- resolved in one place, not four)
+
 PKG = (pathlib.Path.home() / "AppData/Roaming/npm/node_modules/@deepseek-ai/dsh"
        / "node_modules/@deepseek-ai/dsh-working-directory/lib")
 RUNS = pathlib.Path(os.environ.get("DSH_HOME") or pathlib.Path.home() / ".dsh") \
@@ -89,7 +92,7 @@ def main() -> int:
     print()
     print("2. SLOTS -- every planned slot exists and started from one template")
     print("-" * 78)
-    template = json.loads(json.dumps(walk(TEMPLATE)))
+    template = json.loads(json.dumps(walk(_study.declared("template"))))
     template_sha = tree_sha(template)
     print(f"  template            : {template_sha}  {[e['rel'] for e in template]}")
     untouched, changed, missing = 0, [], []
