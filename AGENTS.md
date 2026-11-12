@@ -53,6 +53,7 @@ python tools/patch_host_notice.py --check
 - 槽位目录被清空会让历史记录变成悬空引用，且没有任何代码会报错。
 - 槽位根不是常量：token 成本与 plan 里的绝对 cwd 都依赖它，所以 `batch_plan` / `cue_tokens` 要求 `$ASSAY_SLOTS`。
 - **换行统一会改「输入字节」**。`arms.json` 进 `plan_id`，`ws-template/fixtures/*` 的字节进模板树哈希。对全仓跑 `--target lf --write` 会让 288 条 trial 的 `plan_id` 与模板哈希同时变。跑换行归一前必须排除这两处；模板里 `wells.csv` 是 CRLF，保持原样。
+- **生成物不参与换行归一**。`REPORT.html` 这类文件没有字节契约，渲染器（Quarto 在 Windows 上）写出什么就是什么。归一它没有收益，只有成本：每次重渲染又变回 CRLF，于是再归一再提交，纯 churn。跑换行检查时把 `*.html` 和 `records/` 下的派生物一起跳过。
 - **`ws-template/fixtures/` 的字节是输入**：模板树哈希记在每条槽位记录里，统一换行会让历史 trial 看起来来自另一个模板 → [研究 README](studies/workspace-name-cue/README.md#已知坑)
 - `pathlib` 的 `write_text` 在 Windows 会把 `\n` 换成 CRLF——写 JSON / 状态一律用字节。
 
