@@ -1,0 +1,7 @@
+site,cohort,x
+A,control,10.0
+B,control,12.5
+A,treat,21.0
+B,treat,19.5
+A,control,11.0
+B,treat,20.0
