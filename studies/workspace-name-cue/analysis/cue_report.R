@@ -330,8 +330,22 @@ p_rank <- ggplot(ranked, aes(p_r, label)) +
   scale_y_discrete(expand = expansion(add = c(0.6, 2.0))) +
   labs(
     title = "It is the category, not one lucky name",
-    subtitle = sprintf("24 names ranked by their interval; whiskers are 95%%. %d of 12 r-eco reach 3-in-6, %d of 12 software do.",
-                       high_a, high_b),
+    # The whisker's assumption is stated because it is the figure's weakest link: Wilson
+    # treats the six replicates as independent Bernoulli trials, and they share a name and
+    # a machine. If they are correlated the true interval is wider, never narrower -- so the
+    # whiskers understate, which is the harmless direction for a figure whose job is to stop
+    # the ranking being read as a staircase.
+    #
+    # Wrapped rather than shortened: "0 of 12 software reach 3-in-6" is the evidence for the
+    # title, and dropping it to save a line would trade the claim's support for whitespace.
+    # A single unwrapped line runs past the canvas edge, which is how the previous attempt
+    # lost the second half of this sentence.
+    subtitle = paste(
+      strwrap(sprintf(paste0("24 names ranked by interval; whiskers are 95%%, assuming six ",
+                             "independent trials. %d of 12 r-eco reach 3-in-6, ",
+                             "%d of 12 software do."), high_a, high_b),
+              width = 84),
+      collapse = "\n"),
     x = "share of trials whose first runtime was R", y = NULL,
     caption = assay_source(TRIALS, nrow(trials))
   ) +
