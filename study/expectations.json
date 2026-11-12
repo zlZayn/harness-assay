@@ -1,0 +1,23 @@
+{
+  "_why": "Fixture assertions for the record index. Each one is a pair of runs whose relationship we already know, so the index can be checked without spending a model call. Study-specific by nature: lives here, not in tools/.",
+  "assertions": [
+    {
+      "kind": "same_stimulus",
+      "a": "d7c66e52",
+      "b": "cb972c23",
+      "why": "Two harness files that differ only in row order. Mounting canonicalizes the tool table, so the subject received byte-identical context. The index must collapse them."
+    },
+    {
+      "kind": "different_input",
+      "a": "d7c66e52",
+      "b": "cb972c23",
+      "why": "The harness file bytes differ, so provenance must stay distinct even though the stimulus is identical. This is what makes 'conditions are replaceable' checkable."
+    },
+    {
+      "kind": "different_stimulus",
+      "a": "286bcbad",
+      "b": "27ab1e5d",
+      "why": "The two arms of the first cue probe. Same harness file, same task, different workspace name. The delivered context differs because the host puts the cwd in an injected message."
+    }
+  ]
+}
