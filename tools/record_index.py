@@ -9,6 +9,7 @@ What stays out of here on purpose, and where it goes instead:
 
   * which runs belong to which arm / study   -> the study's own spec file
   * what a cue means, and which words count  -> the study's own spec file
+  * which command counts as "using R"        -> the study's own spec file
   * what "passed" means                      -> the study's criteria file
   * expectations used to verify this layer   -> the study's expectations file
 
@@ -50,7 +51,7 @@ import os
 import pathlib
 import re
 
-INDEX_SCHEMA = 1
+INDEX_SCHEMA = 2
 
 # Host default, overridable by $DSH_HOME. Not study-specific.
 DEFAULT_ROOT = pathlib.Path(os.environ.get("DSH_HOME") or pathlib.Path.home() / ".dsh") \
@@ -170,6 +171,44 @@ def delivered(events: list[dict], trial) -> dict | None:
     }
 
 
+def calls_of(events: list[dict], trial) -> list[dict]:
+    """What the subject asked its tools to run, in call order.
+
+    The host's `trace` counts tool calls but does not say what they were, so a study whose
+    outcome is "which runtime did it reach for" had nothing to read. The arguments are kept
+    verbatim here: a substring is not a meaning, and deciding that `Rscript` means "the R
+    arm" is study knowledge, which lives in the study's own files.
+
+    Measured cost on the 14 runs recorded to date: 64 calls, 18 KB of arguments, 3.7% of
+    events.jsonl. Cheap enough to keep, and keeping the text is what makes a criterion
+    replaceable later without paying for a second run.
+    """
+    mine = sorted((e for e in events if e.get("trial") == trial), key=lambda x: x.get("seq", 0))
+
+    failed = set()
+    for e in mine:
+        if e.get("type") == "tool/result":
+            msg = (e.get("data") or {}).get("message") or {}
+            if msg.get("isError"):
+                failed.add((msg.get("source") or {}).get("callId"))
+
+    out = []
+    for e in mine:
+        if e.get("type") != "tool/call":
+            continue
+        data = e.get("data") or {}
+        args = data.get("arguments")
+        text = args if isinstance(args, str) else ("" if args is None else canon(args))
+        out.append({
+            "step": data.get("step"),
+            "name": data.get("name"),
+            "args": text,
+            "args_chars": len(text),
+            "error": data.get("callId") in failed,
+        })
+    return out
+
+
 def index_run(run_dir: pathlib.Path) -> list[dict]:
     run = json.loads((run_dir / "run.json").read_text(encoding="utf-8"))
     trials = read_jsonl(run_dir / "trials.jsonl")
@@ -258,6 +297,8 @@ def index_run(run_dir: pathlib.Path) -> list[dict]:
                 "timed_out": rec.get("timedOut"),
                 "wall_ms": rec.get("wallMs"),
                 "structured": rec.get("structured"),
+                # what it did, in order -- the only place a process-level outcome can be read
+                "tool_calls": calls_of(events, trial_no),
                 "trace": rec.get("trace"),
                 "steps": (host.get("sessionStats") or {}).get("steps"),
                 "token_usage": host.get("tokenUsage"),

@@ -6,7 +6,7 @@
 
 | 文件 | 职责 | 被谁依赖 | 改后必验 |
 |---|---|---|---|
-| `record_index.py` | run 目录 → 中性条件记录（两个身份 + 交付路径 + 结局） | `verify_index`、`index_tables.R`、`exposure_check` | 跑一次，`verify_index` 3/3 |
+| `record_index.py` | run 目录 → 中性条件记录（两个身份 + 交付路径 + 工具调用原文 + 结局） | `verify_index`、`index_tables.R`、`process_report`、`exposure_check` | 跑一次，`verify_index` 3/3 |
 | `verify_index.py` | 拿研究的期望文件校验索引 | — | 同上，PASS/FAIL 都要看到 |
 | `workspace.py` | 从模板造工作区；跑完快照 | `batch_plan` 用同名槽位约定 | `create` 两次同名必须失败 |
 | `grade.py` | 按准则判定观测 | — | 换 `criteria_id` 重算，观测 sha 不变 |
