@@ -63,14 +63,30 @@ def sha(obj, n: int = 12) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:n]
 
 
-def build(arms: dict, task: dict, k: int, plan_id: str, root: pathlib.Path) -> list[dict]:
-    """One row per trial. The slot name carries the cue, so the replicate is a suffix."""
+def build(selected: list[dict], task: dict, k: int, plan_id: str, root: pathlib.Path) -> list[dict]:
+    """One row per trial, interleaved by replicate.
+
+    The slot name carries the cue, so the replicate is a suffix -- but the *sequence* is not
+    a detail. On six runs of one identical condition (same harness, same task, same schema)
+    the outcomes fell monotonically with position: Spearman(order, wall time) = -0.83,
+    (order, steps) = -0.90, (order, output tokens) = -0.83. Six points cannot settle whether
+    that is drift or noise, and that is exactly the problem: a plan that spends all five
+    replicates of one arm before touching the next cannot separate an arm effect from a
+    position effect, and the ambiguity is unresolvable after the fact.
+
+    Interleaving does not remove drift. It spreads it across arms, which is the most one
+    batch can do. `order` is written into the plan so the sequence is evidence rather than a
+    convention somebody has to remember.
+    """
     rows = []
-    for arm in arms["arms"]:
-        for rep in range(1, k + 1):
+    order = 0
+    for rep in range(1, k + 1):
+        for arm in selected:
+            order += 1
             slot = f"{arm['slot'].rsplit('-', 1)[0]}-{rep:02d}"
             rows.append({
                 "plan_id": plan_id,
+                "order": order,
                 "slot": slot,
                 "rep": rep,
                 "family": arm["family"],
@@ -96,8 +112,9 @@ def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Pa
       DUPLICATE  one slot, several runs     -- two trials stacked into one history
 
     `--expect-complete` turns pending into a problem too, which is the post-batch reading.
+    Rows are listed in plan order, not sorted by name: the board is read in the sequence it
+    will run, so a mis-ordered plan is visible here rather than discovered afterwards.
     """
-    by_slot = {r["slot"]: r for r in rows}
     problems = 0
 
     recorded: dict[str, list[pathlib.Path]] = {}
@@ -110,9 +127,10 @@ def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Pa
         recorded.setdefault(pathlib.PureWindowsPath(cwd).name, []).append(d)
 
     done = pending = 0
-    print(f"{'slot':<14}{'slot on disk':<14}{'runs':<6}state")
+    print(f"{'order':<7}{'slot':<14}{'on disk':<10}{'runs':<6}state")
     print("-" * 60)
-    for slot in sorted(by_slot):
+    for row in rows:
+        slot = row["slot"]
         exists = (root / slot).is_dir()
         runs = recorded.get(slot, [])
         if len(runs) > 1:
@@ -127,9 +145,9 @@ def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Pa
             if not expect_complete:
                 pending += 1
         problems += 1 if bad else 0
-        print(f"{slot:<14}{str(exists):<14}{len(runs):<6}{state}")
+        print(f"{row['order']:<7}{slot:<14}{str(exists):<10}{len(runs):<6}{state}")
 
-    unexpected = sorted(set(recorded) - set(by_slot))
+    unexpected = sorted(set(recorded) - {r["slot"] for r in rows})
     if unexpected:
         print("\nruns recorded outside this plan (older probes -- not a failure):")
         for name in unexpected:
@@ -154,6 +172,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--task", required=True, help="a file name under study/tasks, without .json")
     ap.add_argument("--k", type=int, default=5, help="replicates per arm")
+    ap.add_argument("--family", default="",
+                    help="comma-separated families to include; default every arm in the table")
     ap.add_argument("--verify", action="store_true", help="check the plan against disk")
     ap.add_argument("--expect-complete", action="store_true",
                     help="with --verify: also fail on trials that have not run yet")
@@ -166,9 +186,19 @@ def main() -> int:
         return 1
     task = json.loads(task_path.read_text(encoding="utf-8"))
 
-    plan_id = f"{args.task}-k{args.k}-{sha(arms['arms'] + [task['prompt'], task['schema']])}"
+    wanted = [f.strip() for f in args.family.split(",") if f.strip()]
+    selected = [a for a in arms["arms"] if not wanted or a["family"] in wanted]
+    if not selected:
+        known = sorted({a["family"] for a in arms["arms"]})
+        print(f"no arm in families {wanted}; the table declares {known}", file=sys.stderr)
+        return 1
+
+    # Order is part of the plan's identity: the same arms in a different sequence are a
+    # different experiment, and the id should not let the two look like the same thing.
+    plan_id = f"{args.task}-k{args.k}-" \
+              f"{sha(selected + [task['prompt'], task['schema'], 'rep-major'])}"
     root = slots_root()
-    rows = build(arms, task, args.k, plan_id, root)
+    rows = build(selected, task, args.k, plan_id, root)
 
     if args.verify:
         print(f"plan {plan_id}\n")
@@ -182,24 +212,28 @@ def main() -> int:
 
     md = PLAN_DIR / f"{plan_id}.md"
     lines = [f"# plan {plan_id}", "",
-             f"task `{task['id']}` - {len(rows)} trials, k={args.k}", "",
-             "| slot | family | cue | cwd |", "|---|---|---|---|"]
+             f"task `{task['id']}` - {len(rows)} trials, k={args.k}, "
+             f"{len(selected)} arm(s): {', '.join(a['slot'] for a in selected)}", "",
+             "Interleaved by replicate, not by arm: one replicate of every arm, then the",
+             "next. The sequence below is the order to run in.", "",
+             "| order | slot | family | cue | cwd |", "|---|---|---|---|---|"]
     for r in rows:
-        lines.append(f"| `{r['slot']}` | {r['family']} | {r['cue'] or '-'} | `{r['cwd']}` |")
+        lines.append(f"| {r['order']} | `{r['slot']}` | {r['family']} | "
+                     f"{r['cue'] or '-'} | `{r['cwd']}` |")
     lines += ["", f"prompt sha `{rows[0]['prompt_sha']}`, schema sha `{rows[0]['schema_sha']}`",
-              "", "Every trial: `harness_run` with this task's prompt and schema, `cwd` from the table,",
-              "then `workspace.py snapshot <slot>` when the batch is done."]
+              "", "Every trial: `harness_run` with this task's prompt and schema, `cwd` from",
+              "the table, then `workspace.py snapshot <slot>` when the batch is done."]
     md.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
     print(f"{len(rows)} trials -> {out}")
     print(f"           -> {md}")
     print(f"\ntokenizer: {arms['tokenizer']['name']} {arms['tokenizer']['version']} "
           f"/ {arms['tokenizer']['encoding']}  (proxy)")
-    print(f"{'slot':<14}{'family':<10}{'cue':<12}{'expected path tokens':<22}")
-    print("-" * 60)
+    print(f"{'order':<7}{'slot':<14}{'family':<10}{'cue':<12}{'expected path tokens':<22}")
+    print("-" * 66)
     for r in rows:
-        print(f"{r['slot']:<14}{r['family']:<10}{str(r['cue'] or '-'):<12}"
-              f"{r['expected_path_tokens']:<22}")
+        print(f"{r['order']:<7}{r['slot']:<14}{r['family']:<10}"
+              f"{str(r['cue'] or '-'):<12}{r['expected_path_tokens']:<22}")
     return 0
 
 
