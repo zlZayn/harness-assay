@@ -27,7 +27,17 @@ for d in sorted(os.listdir(RUNS)):
     slot = os.path.basename(rj['task']['cwd'])
     if slot not in plan:
         continue
-    t = json.loads(open(os.path.join(p, 'trials.jsonl'), encoding='utf-8').readline())
+    trials = os.path.join(p, 'trials.jsonl')
+    # a run directory appears at dispatch and its trials.jsonl fills in as trials finish;
+    # reading it the instant it exists would count an in-flight trial as a broken one
+    try:
+        with open(trials, encoding='utf-8') as fh:
+            first = fh.readline()
+        if not first.strip():
+            continue
+        t = json.loads(first)
+    except (OSError, json.JSONDecodeError):
+        continue
     mi = t.get('modelInput') or {}
     rows.append({
         'slot': slot,
