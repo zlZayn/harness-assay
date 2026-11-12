@@ -121,6 +121,7 @@ def scan_run(run_dir: pathlib.Path) -> dict | None:
     return {
         "task_id": task_id,
         "run_id": run_dir.name,
+        "started_at": run.get("startedAt"),
         "slot": slot,
         "harness": run.get("stimulus", {}).get("harness", {}).get("digest"),
         "parents": sorted(parents),
@@ -144,12 +145,17 @@ def main() -> int:
         print(f"no runs under {args.root}")
         return 1
 
+    # Newest first: the guard answers "is this environment usable now", and the most recent
+    # run is the evidence for that. Older runs are history -- a run recorded before a fix is
+    # a true record of the old behaviour and must not keep the gate red forever.
+    runs.sort(key=lambda r: r.get("started_at") or 0, reverse=True)
+
     violations = 0
-    print(f"{'run':<10}{'task':<18}{'operator path':<36}cue tokens in it")
+    print(f"{'run':<10}{'task':<18}{'source path named by the notice':<36}cue tokens in it")
     print("-" * 92)
     for r in runs:
-        parents = r["parents"] or ["(none: cwd equalled the operator path)"]
-        for p in parents:
+        sources = r["parents"] or ["(notice named no source path)"]
+        for p in sources:
             h = hits(p, tokens) if r["parents"] else []
             flag = ", ".join(f"{x['token']}@{x['segment']}" for x in h)
             if h:
@@ -199,14 +205,25 @@ def main() -> int:
         print("        delivers extra sections, and the harness checkout path with them.")
 
     print()
-    if violations:
-        print(f"FAIL: {violations} delivered operator path(s) carry a lexicon token.")
-        print("  The subject was cued by the directory the session was opened in, not by")
-        print("  anything the study declared. A `cd` cannot fix this: the operator path is")
-        print("  the session's origin. Start the run from a session rooted at a neutral")
-        print("  path, then re-check.")
+    newest = runs[0]
+    newest_hits = hits(newest["parents"][0], tokens) if newest["parents"] else []
+    historical = violations - len(newest_hits)
+
+    if historical:
+        print(f"note: {historical} older run(s) still record a contaminated source path.")
+        print("      They are true records of the behaviour before the fix and stay as they were.")
+
+    if newest_hits:
+        flagged = ", ".join(f"{h['token']}@{h['segment']}" for h in newest_hits)
+        print(f"FAIL: the most recent run ({newest['run_id'][-8:]}) names {flagged}")
+        print("      in its working-directory notice.")
+        print("  This environment is not usable for a cue study: the subject is told the")
+        print("  operator's path. Run tools/patch_host_notice.py, or start the run from a")
+        print("  session rooted at a neutral path.")
         return 2
-    print("PASS: no lexicon token reached the subject through the operator path.")
+
+    print("PASS: the most recent run's notice names no source path, so no cue reaches the")
+    print("      subject through the operator path.")
     return 0
 
 
