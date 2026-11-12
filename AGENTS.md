@@ -13,7 +13,9 @@
 ```bash
 python tools/record_index.py                        # run 目录 -> records/index.jsonl
 python tools/verify_index.py --index records/index.jsonl --expect study/expectations.json
-Rscript analysis/index_tables.R                     # -> records/tables/*.csv
+Rscript analysis/index_tables.R                     # -> records/tables/{observations,conditions,calls}.csv
+Rscript analysis/cue_tables.R                       # -> records/tables/trials.csv
+Rscript analysis/cue_report.R                       # -> 估计 + records/figures/*.png
 python tools/grade.py --criteria study/criteria/v1.json
 python -X utf8 analysis/process_report.py           # 每个 trial 用了哪个解释器
 python -X utf8 analysis/cue_effect.py               # prereg 声明的对比 + 精确置换
@@ -28,10 +30,11 @@ python tools/patch_host_notice.py --check
 
 ## 验证快照
 
-- 记录层：330 条 run 上 `verify_index` 3/3 通过；`index_tables.R` 出 330 观测 / 329 条件；索引 `index_schema=2`，带 `observed.tool_calls` 原文。
+- 记录层：330 条 run 上 `verify_index` 3/3 通过；`index_tables.R` 出 330 观测 / 329 条件 / 2034 调用；索引 `index_schema=2`，带 `observed.tool_calls` 原文。
+- 研究层表：`cue_tables.R` 出 `trials.csv` 288 行（= plan 行数），48 个措辞全部落在声明过的条件里；索引里另有 42 条属于批次 1 或探针，按范围排除并在输出里点名。
 - 判定层：`answer-v1` 39 pass / 3 missing；`norris-v1` 282 pass / 6 missing，`observations_sha` 稳定。`answer_json` 往返自检 321 条全等。
 - 过程层：批次 1 的 28 条全在臂表内；批次 2 的 288 条 `r-eco` R=30/72、`py-eco` python=66/72、`software` R=11/72、`plain` R=16/72；零工具调用 0/288。
-- 对比：`P(Y=R | r-eco) − P(Y=R | software)` = **+0.2639**，措辞层面精确置换单侧 **p = 0.0002**，见 [依据记录](.agents/notes/2026-11-12-cue-effect-result.md)。
+- 对比：`P(Y=R | r-eco) − P(Y=R | software)` = **+0.2639**，措辞层面精确置换单侧 **p = 0.0002**；措辞层面 bootstrap 95% 区间 **[+0.153, +0.389]**，六个 block 同向，留一措辞全部仍 > 0。见 [依据记录](.agents/notes/2026-11-12-cue-effect-result.md)。
 - 通道体检：PASS（288 条都在窗口内跑，通知不点名操作者路径）；更早 11 条仍是 FAIL 的历史记录。
 - 交付字节：批次 2 两份子批里各漂过一次，都被每 12 条一次的 `check_delivery` 抓住并丢弃重跑；最终 288 条 `toolSchemaDigest` 单一（`6218479a`）、`systemPrompt` 单一（`75222986`）。
 - 顺序：`order_fidelity` 在 288 条上 Spearman **+1.000**、零漂移、零逆序。
@@ -45,6 +48,7 @@ python tools/patch_host_notice.py --check
 - [x] W5 第二批：`norris-ols` 题，4 条件 × 12 措辞 × 6 重复 = 288 trial —— 已跑完，结论见 [依据记录](.agents/notes/2026-11-12-cue-effect-result.md)
 - [ ] `letter` 2 臂：暂缓；k 按第二批实测的措辞离散度重算（r-eco sd 0.181 / software sd 0.111），现在定不了
 - [ ] 跨模型复制：单一模型路径下 Python 语料先验与 cue 分不开，只有换模型重跑能分开
+- [ ] 下游分析继续往 `cue_report.R` 加（只读 `trials.csv`）；要新字段先加到 `trials.csv`，别让下一个人回去解析 JSON
 - [ ] 给 `analysis/` 一个 R 侧环境锁（`renv.lock`），当前无版本锁定
 - [ ] 补 CI 与本地钩子（L3 要求，暂缺）
 
