@@ -38,7 +38,7 @@ python tools/patch_host_notice.py --check
 ## 待办
 
 - [x] W5 第一批：`lang` 4 臂 × k=7 = 28 trial —— 已跑完，结论见 [依据记录](.agents/notes/2026-11-12-batch1-result.md)
-- [ ] W5 第二批：`norris-ols` 题，`r-eco` vs `placebo` 各 3 措辞 × k=8 = 48 trial —— 题/判据/prereg 已就位（`plan_id` `norris-ols-k8-93989b5a88ab`），待开跑
+- [ ] W5 第二批：`norris-ols` 题，4 条件 × 12 措辞 × 6 重复 = 288 trial，分 3 个 96 条的子批（`plan_id` `norris-ols-k6-7a8e2a45c2f1`，见 [prereg](study/prereg/norris-r3-v1.json)）
 - [ ] `letter` 2 臂：暂缓；k 要按第二批的实测率重算，现在定不了
 - [ ] 给 `analysis/` 一个 R 侧环境锁（`renv.lock`），当前无版本锁定
 - [ ] 补 CI 与本地钩子（L3 要求，暂缺）
