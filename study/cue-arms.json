@@ -79,6 +79,66 @@
       "tokens": 10,
       "cue_tokens": 0,
       "delta_vs_shortest": 1
+    },
+    {
+      "slot": "marlow-01",
+      "cue": null,
+      "family": "placebo",
+      "note": "neutral, similar length to dplyr",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 0,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "fenwick-01",
+      "cue": null,
+      "family": "placebo",
+      "note": "neutral, similar length to ggplot",
+      "chars": 25,
+      "tokens": 11,
+      "cue_tokens": 0,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "orwell-01",
+      "cue": null,
+      "family": "placebo",
+      "note": "neutral, similar length to tidyr",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 0,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "dplyr-01",
+      "cue": "dplyr",
+      "family": "r-eco",
+      "note": "R package name",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 3,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "ggplot-01",
+      "cue": "ggplot",
+      "family": "r-eco",
+      "note": "R package name",
+      "chars": 24,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
+    },
+    {
+      "slot": "tidyr-01",
+      "cue": "tidyr",
+      "family": "r-eco",
+      "note": "R package name",
+      "chars": 23,
+      "tokens": 11,
+      "cue_tokens": 2,
+      "delta_vs_shortest": 2
     }
   ]
 }

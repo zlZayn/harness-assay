@@ -51,6 +51,15 @@ CANDIDATES = [
     ("cobden-01",  None,        "lang",     "neutral, similar token cost to python"),
     ("tidyverse-01", "tidyverse", "lang",   "explicit package name; also a language pointer"),
     ("hedgerow-01", None,       "lang",     "neutral, similar token cost to tidyverse"),
+    # One word per condition is n=1 wording: the result would be about that string, not
+    # about the category. These give each condition three wordings so the wording can be
+    # treated as a block/random effect (study/DESIGN.md section 5).
+    ("dplyr-01",    "dplyr",    "r-eco",    "R package name"),
+    ("ggplot-01",   "ggplot",   "r-eco",    "R package name"),
+    ("tidyr-01",    "tidyr",    "r-eco",    "R package name"),
+    ("marlow-01",   None,       "placebo",  "neutral, similar length to dplyr"),
+    ("fenwick-01",  None,       "placebo",  "neutral, similar length to ggplot"),
+    ("orwell-01",   None,       "placebo",  "neutral, similar length to tidyr"),
 ]
 
 

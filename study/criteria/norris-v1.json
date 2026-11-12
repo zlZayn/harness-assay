@@ -1,0 +1,47 @@
+{
+  "criteria_id": "norris-v1",
+  "_what": "Judgement as data. Nothing here is applied by the record layer; grade.py reads this file, compares each observation's answer against declared truth, and writes a verdict record. Editing this file never touches an observation, so a criterion can be replaced and the same measurements re-judged for free.",
+
+  "task_key": "task_prompt_sha",
+  "_why_task_key": "taskId is a label the caller typed, so the same task can be called 'dplyr-03' in one arm and 'orwell-03' in another. The task's identity is the question itself.",
+
+  "tolerance": {
+    "rel": 7.3e-6,
+    "_why_this_default": "Fallback only: the loosest of the six derived thresholds, so a field added later cannot accidentally be held to a stricter rule than the task asked for. Every field below overrides it.",
+    "_derivation": "study/DESIGN.md section 7. The task asks for 6 significant digits. For a value with mantissa m, rounding to k digits produces a relative error up to 0.5*10^-k/m, so the same digit count means different relative errors depending on where the mantissa sits: 1.00212 loses 3.2e-6 at 6 digits, 0.999994 loses only 2.5e-7. Therefore one shared threshold cannot both accept a correctly rounded 6-digit answer and reject a 5-digit one. The threshold per field is the geometric midpoint between the 6-digit and 5-digit rounding errors: epsilon_6 < threshold < epsilon_5, verified field by field.",
+    "_verified": "Every 6-digit rounding passes its own threshold and every 5-digit rounding fails it. Checked before the task was ever run."
+  },
+
+  "known_limits": [
+    "These thresholds are 200-500x tighter than answer-v1's 5e-4. That is what the task asked for, but it means correctness is NOT at ceiling on this task and must stay a secondary outcome: it measures arithmetic, not language preference.",
+    "Relative tolerance is weak near 1. R2 = 0.999994 sits only 3.75e-6 from its own 5-digit rendering, so the whole discriminating window is 2.5e-7 to 9.8e-7 to 3.8e-6 wide. A subject that truncates instead of rounding can land on either side of it, and that is a reporting-style difference, not a wrong answer.",
+    "NIST's certified values carry about 15 digits because they were computed in arbitrary precision; float64 implementations agree with each other only to about 12. At these thresholds that leaves six orders of margin, so a threshold tightened below roughly 1e-10 would begin rejecting correct work.",
+    "This file cannot tell whether the six numbers were computed or recalled. The certified values are public and may be in training data. That is handled as an instrument-effectiveness reading (zero-tool-call rate), not as a criterion, because excluding those trials from the analysis would condition on a post-treatment variable.",
+    "Field 5 asks for the residual standard deviation with n-2 degrees of freedom. A subject that reports sqrt(SSE/n) is answering a different question; the degrees of freedom are stated in the prompt to remove the ambiguity, which reduces it but does not prove the subject read that clause."
+  ],
+
+  "tasks": {
+    "8dee2276d56fee68": {
+      "label": "OLS of y on x over 36 NIST Norris observations: B0, B1, their standard errors, residual sd (df n-2), unadjusted R2",
+      "truth": {
+        "b0": -0.262323073774029,
+        "b1": 1.00211681802045,
+        "se_b0": 0.232818234301152,
+        "se_b1": 0.000429796848199937,
+        "resid_sd": 0.884796396144373,
+        "r2": 0.999993745883712
+      },
+      "tolerance": {
+        "b0": 1.8e-6,
+        "b1": 7.3e-6,
+        "se_b0": 2.8e-6,
+        "se_b1": 1.6e-6,
+        "resid_sd": 1.4e-6,
+        "r2": 9.8e-7
+      },
+      "truth_source": "NIST StRD certified values (Linear Least Squares, Norris). Re-derived independently before use: R lm(), Python numpy lstsq (SVD), a hand-written closed form, and normal equations via matrix inverse all reproduce these to at least 12 significant digits. The certified value is the truth; the implementations only confirm that 6 digits is achievable by the ordinary route.",
+      "tolerance_source": "Geometric midpoint between the 6-digit and 5-digit relative rounding errors of each certified value (study/DESIGN.md section 7). Recomputed by script rather than estimated.",
+      "answer_fields_expected": 6
+    }
+  }
+}
