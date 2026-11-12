@@ -23,6 +23,12 @@
 
   "execution": {
     "_why_chunked": "288 trials in one go is one long opportunity to fail silently. Each chunk is a complete balanced replicate of the design -- all four conditions, all 48 wordings -- so a chunk that finishes is a usable experiment, and a chunk that goes wrong can be discarded without biasing anything.",
+    "concurrency": {
+      "allowed": 6,
+      "_why": "Wall clock only. A trial's start is registered when the call is made, so firing in planned order keeps startedAt ordered; measured Spearman(startedAt, planned order) = +1.000 with zero drift over the first 16 trials. Position is therefore preserved exactly, not approximated.",
+      "_why_not_trials_parameter": "harness_run takes `trials: N`, but the workspace is fixed per CALL and reused by every trial inside it, and the trial loop awaits serially. Using it would put six runs in one directory, so trial 2 would find trial 1's script and could skip computing. Distinct slots per replicate are the reason each trial needs its own call.",
+      "_checked_by": "tools/order_fidelity.py, run after each sub-batch"
+    },
     "sub_batches": [
       { "n": 1, "orders": [1, 96], "trials": 96, "rounds": [1, 2] },
       { "n": 2, "orders": [97, 192], "trials": 96, "rounds": [3, 4] },
