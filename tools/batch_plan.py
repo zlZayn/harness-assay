@@ -101,6 +101,61 @@ def build(selected: list[dict], task: dict, k: int, plan_id: str, root: pathlib.
     return rows
 
 
+def delivered_by_host(rows: list[dict], recorded: dict[str, list[pathlib.Path]]) -> int:
+    """Did every arm's subject actually receive the same tool table and system prompt?
+
+    The plan's own `prompt_sha` / `schema_sha` are hashes of *our* canonical JSON, which
+    sorts keys -- so they are blind to a JSON-schema object's property order, and the model
+    is not. A batch assembled from 28 hand-typed copies of one schema can therefore pass
+    every check in this file and still deliver two different tool tables.
+
+    That is not hypothetical: on 2026-11-12 batch 1 did exactly that. One trial carried the
+    schema serialized `{type, properties, required}` and the other 27 `{properties, required,
+    type}`; semantically the same schema, two different delivered bytes. Ours said "single".
+    The host's `toolSchemaDigest` said otherwise, because it digests what it assembled.
+
+    So the check is made on the host's digests, for the slots that have a record. Only
+    trials the host actually folded count -- a pending slot has nothing to compare.
+    """
+    digests: dict[str, dict[str, list[str]]] = {"system prompt": {}, "tool table": {}}
+    seen = 0
+    for row in rows:
+        for run_dir in recorded.get(row["slot"], []):
+            path = run_dir / "trials.jsonl"
+            if not path.exists():
+                continue
+            with path.open(encoding="utf-8") as fh:
+                line = fh.readline()
+            if not line.strip():
+                continue
+            model_input = (json.loads(line).get("modelInput") or {})
+            sys_dig = (model_input.get("systemPrompt") or {}).get("digest")
+            tool_dig = model_input.get("toolSchemaDigest")
+            for label, value in (("system prompt", sys_dig), ("tool table", tool_dig)):
+                digests[label].setdefault(value, []).append(row["slot"])
+            seen += 1
+
+    if not seen:
+        print("\ndelivered bytes: nothing recorded yet, nothing to compare")
+        return 0
+
+    print(f"\ndelivered bytes as the host digested them ({seen} trial(s) recorded):")
+    problems = 0
+    for label, values in digests.items():
+        if len(values) == 1:
+            (digest, who), = values.items()
+            print(f"  {label:<15} SINGLE  {digest}")
+            continue
+        problems += 1
+        print(f"  {label:<15} FAIL    {len(values)} distinct values across one batch")
+        for digest, who in sorted(values.items(), key=lambda kv: -len(kv[1])):
+            print(f"      {str(digest):<12}{len(who):>3} trial(s): "
+                  f"{', '.join(sorted(who)[:6])}{' ...' if len(who) > 6 else ''}")
+        print("      The arms were not given the same bytes, so they are not comparable.")
+        print("      Our own canonical hash cannot see this; only the host can.")
+    return problems
+
+
 def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Path) -> int:
     """Is the board in the state the plan assumes?
 
@@ -162,6 +217,8 @@ def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Pa
     if len(shas_prompt) != 1 or len(shas_schema) != 1:
         print("  FAIL: the task is not byte-identical across arms")
         problems += 1
+
+    problems += delivered_by_host(rows, recorded)
 
     print(f"\n{len(rows)} planned: {done} done, {pending} pending, "
           f"{problems} problem(s)")

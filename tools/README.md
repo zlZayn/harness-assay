@@ -12,7 +12,7 @@
 | `grade.py` | 按准则判定观测 | — | 换 `criteria_id` 重算，观测 sha 不变 |
 | `exposure_check.py` | 交付上下文里有没有没人声明的 cue | 跑批前的闸门 | 占一个词表里的槽位必须 FAIL |
 | `patch_host_notice.py` | 宿主通知的窗口补丁 | 跑批前后各一次 | `--apply --expect patched` 后 `--check` 读 patched；`--revert` 后读 original 且包目录只剩原件 |
-| `batch_plan.py` | 臂表 + 题面 → 待跑表；跑前跑后各查一次 | 跑批 | `--verify` 在占位槽位上 exit 2 |
+| `batch_plan.py` | 臂表 + 题面 → 待跑表（按重复交错）；跑前跑后各查一次，并断言一个批次内宿主摘要单值 | 跑批 | `--verify` 在占位槽位上 exit 2；交付字节不一致也 exit 2 |
 
 全部只用 Python 标准库，无第三方依赖。
 
