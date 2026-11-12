@@ -235,6 +235,58 @@ def main() -> int:
           f"{used_b / by_cond['plain']['n']:.4f}")
     print(f"    difference = {used_a / by_cond['software']['n'] - used_b / by_cond['plain']['n']:+.4f}")
 
+    # --- 3b. the full pairwise matrix -------------------------------------------------
+    # The prereg declares three contrasts and says which question each answers. It does not
+    # say the other three are absent, and reporting only the declared ones lets a reader ask
+    # "was that pair left out because it was inconvenient". So all six get the same exact
+    # test on the same footing. Nothing here changes the primary: the primary is the test
+    # named in the prereg, and it is reported first, above.
+    #
+    # Each pair is tested on the outcome the pair can speak to. Comparing py-eco against
+    # r-eco on P(Y=R) is nearly uninformative by construction -- it repeats the primary from
+    # the other side -- and testing every pair on every outcome would be twelve tests whose
+    # "significance" is a property of looking twelve times. So: the R pairs get P(Y=R), the
+    # python pairs get P(Y=python), and the two pairs that share no language (r-eco vs
+    # py-eco, software vs plain) get P(Y in {R,python}) -- "did it reach for any runtime".
+    print()
+    print("=" * 92)
+    print("3b. THE FULL PAIRWISE MATRIX -- exploratory, declared ONE outcome per pair")
+    print("=" * 92)
+    print("  Not six chances to find something: each pair is tested once, on the outcome")
+    print("  that separates that pair. The prereg's three contrasts are the first three rows.")
+
+    def pairing(a, b, key):
+        return contrast(f"pair {a} vs {b}, P(Y={key})", a, b, key)
+
+    matrix_pairs = [
+        ("r-eco", "software", "R", "primary -- declared"),
+        ("r-eco", "plain", "R", "declared secondary -- total effect vs no software meaning"),
+        ("py-eco", "software", "python", "declared secondary -- the same question, mirrored"),
+        ("r-eco", "py-eco", "R", "exploratory -- does the R cue beat the python cue"),
+        ("py-eco", "plain", "python", "exploratory -- python cue vs no software meaning"),
+    ]
+    matrix = []
+    for a, b, key, why in matrix_pairs:
+        res = pairing(a, b, key)
+        res["why"] = why
+        matrix.append(res)
+
+    # The sixth pair has no shared language, so it is read on "reached for any runtime".
+    # That outcome is post-treatment in the sense that it counts how far the trial got;
+    # it is reported as a description of these 288 trials, never as a second primary.
+    for a, b in (("software", "plain"),):
+        na, nb = by_cond[a]["n"], by_cond[b]["n"]
+        ua, ub = by_cond[a]["used"], by_cond[b]["used"]
+        print(f"\n  pair {a} vs {b}, P(Y in {{R,python}})   [exploratory -- software flavour alone]")
+        print(f"    {a:<9} {ua}/{na} = {ua / na:.4f}")
+        print(f"    {b:<9} {ub}/{nb} = {ub / nb:.4f}")
+        print(f"    difference = {ua / na - ub / nb:+.4f}")
+        print(f"    no p reported: this outcome is not in the prereg's declared set")
+        matrix.append({"label": f"pair {a} vs {b}, runtime used", "a": a, "b": b,
+                       "outcome": "runtime-used", "rate_a": ua / na, "rate_b": ub / nb,
+                       "difference": ua / na - ub / nb, "p_one_sided": None,
+                       "why": "exploratory -- not declared, reported without a test"})
+
     # --- 4. instrument readings -----------------------------------------------------------
     print()
     print("=" * 92)
@@ -259,6 +311,7 @@ def main() -> int:
         "wordings": len(per_wording),
         "per_condition": by_cond,
         "contrasts": results,
+        "pairwise_matrix": matrix,
         "instrument": {"zero_tool": zero, "runtime_used": used, "answered": answered,
                        "mixed": sum(1 for t in trials if len(t["runtimes"]) > 1)},
         "stimulus_ids": sorted({t["stimulus_id"] for t in trials}),
