@@ -53,6 +53,7 @@
 | `exposure_report.py` | 那次操纵到底发生了没有 |
 | `process_report.py` | 逐 trial 的运行时分类，按臂汇总（只描述，不出 p 值） |
 | `cue_effect.py` | 执行 prereg 声明的对比：措辞层面精确置换，穷举 C(n,k) |
+| `cue_persistence.R` | 报告里五张派生表的唯一来源：多数派是否等于第一步、位置三分、双命中构成、三种结局定义下的同一检验、秩相关。写 `records/<id>/summary/*.csv`，报告只读不算 |
 | `cue_tables.R` | 一行一个 trial 的整洁表 `trials.csv`，接上条件/分类/顺序/判定 |
 | `cue_report.R` | 估计与作图（读 `trials.csv`） |
 
@@ -77,13 +78,16 @@ export ASSAY_SLOTS=<槽位根>
 Rscript analysis/index_tables.R                          # 仪器层三张表
 Rscript studies/workspace-name-cue/analysis/cue_tables.R # 本研究的 trials.csv
 python  studies/workspace-name-cue/analysis/cue_effect.py
+Rscript studies/workspace-name-cue/analysis/cue_persistence.R  # summary/*.csv
 Rscript studies/workspace-name-cue/analysis/cue_report.R
-cd studies/workspace-name-cue && quarto render REPORT.qmd   # 叙述报告，需先有 figures
+cd studies/workspace-name-cue && quarto render REPORT.qmd   # 叙述报告，需先有 figures 与 summary/
 ```
 
-`REPORT.qmd` 里的图指向 `../../records/.../figures/*.png`，所以 **必须在 `cue_report.R` 之后渲染**；渲染结果 `REPORT.html` 把图内嵌成 base64，离开仓库也打得开。文档里不用 LaTeX（`html-math-method: plain`），否则默认会从 CDN 拉 MathJax，离线时公式不渲染。
+报告里的图由 `cue_report.R` 生成、表由 `cue_persistence.R` 生成，所以**两者都必须在渲染之前跑过**：缺图会渲染出裂图，缺表会让 `read.csv` 直接报错停下——后者是故意的，宁可渲染失败，也不让报告退回手写数字。
 
-产物分工：`records/index.jsonl` 与 `records/tables/*.csv` 是**仪器级**（覆盖这台机器上所有 run）；`records/workspace-name-cue/` 下才是**本研究**的 plan、judgment、ws、`trials.csv`、figures。
+`REPORT.qmd` 里的图指向 `../../records/.../figures/*.png`，表读 `../../records/.../summary/*.csv`，路径都相对 qmd 文件本身；渲染结果 `REPORT.html` 把图内嵌成 base64，离开仓库也打得开。文档里不用 LaTeX（`html-math-method: plain`），否则默认会从 CDN 拉 MathJax，离线时公式不渲染。
+
+产物分工：`records/index.jsonl` 与 `records/tables/*.csv` 是**仪器级**（覆盖这台机器上所有 run）；`records/workspace-name-cue/` 下才是**本研究**的 plan、judgment、ws、`trials.csv`、`summary/`、figures。
 
 ## 已知坑
 

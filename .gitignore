@@ -7,6 +7,15 @@
 records/
 
 # ---------------------------------------------------------------------------
+# Rendered reports. The source of truth is REPORT.qmd; the HTML is what Quarto
+# writes out of it, all at once, on every render. Tracking it means every edit to
+# the source produces a diff of a hundred thousand lines that nobody can review,
+# and it comes back as CRLF each time while the source stays LF. Render it locally:
+# it embeds its own figures, so it opens offline and needs no CDN.
+# ---------------------------------------------------------------------------
+*.html
+
+# ---------------------------------------------------------------------------
 # Workspaces, if a slot root is ever pointed inside the repo.
 # A slot holds what the subject wrote — that is observation, and it belongs next to
 # the run that produced it, not in a commit. Keeping the default outside the repo is
