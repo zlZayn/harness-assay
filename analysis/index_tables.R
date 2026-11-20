@@ -128,12 +128,11 @@ observations <- records |>
       answer_json = if (is.null(o$structured)) {
         NA_character_
       } else {
-        # digits = NA keeps every digit. jsonlite::toJSON defaults to
-        # digits = 4, which silently rounds an answer on its way into
-        # this table: invisible while the answers happened to carry four
-        # significant digits, fatal on a task that asks for six. The
-        # record is right either way; this file was the liar.
-        as.character(toJSON(o$structured, auto_unbox = TRUE, digits = NA))
+        # Seventeen significant digits round-trip an IEEE-754 double. jsonlite's
+        # digits = 4 rounds aggressively, and digits = NA is not a safe
+        # "keep everything" switch either (it emitted only 15 digits here).
+        # The record is right either way; this file must not be the liar.
+        as.character(toJSON(o$structured, auto_unbox = TRUE, digits = 17))
       }
     )
   }) |>
@@ -258,10 +257,9 @@ conditions |>
 # ==============================================================================
 
 # The failure this catches is not a typo, it is a default. jsonlite::toJSON rounds to
-# four significant digits unless told otherwise, so every answer passed through this
-# file rounded -- silently, for as long as the answers happened to be four digits.
-# Only a task asking for six exposed it. A check is the only defence: nobody chose
-# that behaviour, so nobody will remember it.
+# four significant digits unless told otherwise, and digits = NA can also shorten a
+# double. Seventeen digits are required for an exact double round-trip. A check is
+# the only defence: nobody chooses that behaviour, so nobody will remember it.
 cat("\n")
 cat("round-trip check -- answer_json must reproduce the record exactly:\n")
 

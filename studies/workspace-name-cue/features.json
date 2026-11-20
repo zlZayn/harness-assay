@@ -15,6 +15,13 @@
 
   "features": [
     {
+      "name": "model",
+      "definition": "The display name of the model declared by the plan's preregistration; the observed route_model must match the preregistered route or the table build fails.",
+      "derived_from": "observations.route_model + the selected preregistration",
+      "cannot_see": "Any difference in host version or calendar batch. Those remain between-batch limitations, not part of this label.",
+      "role": "the replication factor; old and new plans are never pooled without it"
+    },
+    {
       "name": "slot",
       "definition": "The working-directory name the subject received, taken from workspace.cwd_name.",
       "derived_from": "observations.ws_name",

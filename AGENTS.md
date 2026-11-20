@@ -25,19 +25,19 @@ python tools/patch_host_notice.py --check
 
 ## 验证快照（仪器层）
 
-- 记录层：330 条 run 上 `verify_index` 3/3 通过；`index_tables.R` 出 330 观测 / 329 条件 / 2034 调用；索引 `index_schema=2`，带 `observed.tool_calls` 原文。
-- `answer_json` 往返自检 321 条全等（零容差）；调用表行数 = 观测表 `tool_calls` 总和。
+- 记录层：626 条 run 上 `verify_index` 3/3 通过；`index_tables.R` 出 626 观测 / 625 条件 / 3354 调用；索引 `index_schema=2`，带 `observed.tool_calls` 原文。
+- `answer_json` 往返自检 610 条全等（零容差）；调用表行数 = 观测表 `tool_calls` 总和。
 - 顺序：`order_fidelity` Spearman **+1.000**、零漂移；`audit_controls` PASS（17 个控制变量单值）。
 - 交付：`check_delivery` 单一 `toolSchemaDigest` / `systemPrompt`，prompt 全匹配 plan。
 - 宿主：`--check` 读 original，包目录只剩 `index.js` 与 `types/`；`audit_environment` RESULT: clean。
 - 通道：`exposure_check` PASS。
-- 研究层：`cue_report.R` 出 5 张图，排版闸门 5/5（字号全来自阶梯、家族 1/2）；`cue_effect.py` 主判定 p=0.0002 不变，pairwise 矩阵 6 对齐全。
-- 研究的判定与效应数字 → 该研究的 [README](studies/workspace-name-cue/README.md)。
+- 研究层：原五类图已扩为双模型版本，另有跨模型总览，排版闸门 6/6（字号全来自阶梯、家族 1/2）；原批主判定 p=0.0002 不变，pairwise 矩阵 6 对齐全。
+- 研究的判定、跨模型结果与效应数字 → 该研究的 [README](studies/workspace-name-cue/README.md)。
 
 ## 待办
 
 - [ ] `letter` 2 臂：暂缓；k 按实测措辞离散度重算，现在定不了
-- [ ] 跨模型复制：单一模型路径下语料先验与 cue 分不开
+- [x] 跨模型复制：已补齐第二个模型并记录异质性；语料先验的机制识别仍需更多模型或专门设计
 - [ ] `tools/check_delivery.py` 的 `--plan` 已必填；其余工具也应去掉隐式默认
 - [ ] 给 `analysis/` 一个 R 侧环境锁（`renv.lock`），当前无版本锁定
 - [ ] 补 CI 与本地钩子（L3 要求，暂缺）

@@ -104,6 +104,8 @@ def main() -> int:
                     default=STUDY / "interpreters.json")
     ap.add_argument("--prereg", type=pathlib.Path,
                     default=STUDY / "prereg" / "norris-r3-v1.json")
+    ap.add_argument("--plan", type=pathlib.Path, default=None,
+                    help="defaults to records/<study>/plan/<prereg plan_id>.jsonl")
     ap.add_argument("--out", type=pathlib.Path,
                     default=REC / "judgment" / "cue-effect.json")
     args = ap.parse_args()
@@ -117,6 +119,15 @@ def main() -> int:
     conds = load(args.conditions)["conditions"]
     prereg = load(args.prereg)
     plan_id = prereg["plan_id"]
+    plan_path = args.plan or REC / "plan" / f"{plan_id}.jsonl"
+    if not plan_path.exists():
+        print(f"no plan at {plan_path}", file=sys.stderr)
+        return 1
+    planned = {}
+    for line in plan_path.read_text(encoding="utf-8").splitlines():
+        if line.strip():
+            row = json.loads(line)
+            planned[row["slot"]] = int(row["order"])
 
     wording_of = {w: name for name, c in conds.items() for w in c["words"]}
 
@@ -125,12 +136,15 @@ def main() -> int:
     trials = []
     for r in rows:
         slot = r["workspace"].get("cwd_name") or ""
+        if slot not in planned:
+            continue
         m = re.match(r"^(?P<w>.+)-(?P<rep>\d+)$", slot)
         if not m or m.group("w") not in wording_of:
             continue
         first, seen = first_runtime(r["observed"].get("tool_calls") or [], patterns)
         trials.append({
             "slot": slot,
+            "plan_order": planned[slot],
             "wording": m.group("w"),
             "condition": wording_of[m.group("w")],
             "record_schema": r.get("record_schema"),
@@ -142,8 +156,19 @@ def main() -> int:
         })
 
     if not trials:
-        print("no trial in the index belongs to a wording in conditions.json", file=sys.stderr)
+        print("no trial in the index belongs to this plan", file=sys.stderr)
         return 1
+    seen_slots = collections.Counter(t["slot"] for t in trials)
+    missing = sorted(set(planned) - set(seen_slots))
+    duplicated = sorted(s for s, n in seen_slots.items() if n != 1)
+    if missing or duplicated or len(trials) != len(planned):
+        print(f"plan coverage mismatch: {len(trials)} trial(s) for {len(planned)} planned slots",
+              file=sys.stderr)
+        if missing:
+            print(f"  missing: {missing[:12]}", file=sys.stderr)
+        if duplicated:
+            print(f"  duplicated: {duplicated[:12]}", file=sys.stderr)
+        return 2
 
     per_wording = collections.defaultdict(list)
     for t in trials:
@@ -216,7 +241,7 @@ def main() -> int:
 
     print()
     print("=" * 92)
-    print("3. THE DECLARED CONTRASTS (prereg/norris-r3-v1.json, analysis.primary/secondary)")
+    print(f"3. THE DECLARED CONTRASTS (prereg/{args.prereg.name}, analysis.primary/secondary)")
     print("=" * 92)
     results = [contrast("primary: does an R-package name raise R use, holding "
                         "'looks like software' constant?", "r-eco", "software", "R")]
@@ -303,7 +328,8 @@ def main() -> int:
 
     out = {
         "plan_id": plan_id,
-        "prereg": str(args.prereg.relative_to(ROOT)).replace("\\", "/"),
+        "model": prereg.get("model", "DeepSeek-V4.1-Flash-1017"),
+        "prereg": str(args.prereg.resolve().relative_to(ROOT)).replace("\\", "/"),
         "interpreter_table": str(args.interpreters.relative_to(ROOT)).replace("\\", "/"),
         "condition_table": str(args.conditions.relative_to(ROOT)).replace("\\", "/"),
         "index_sha": hashlib.sha256(args.index.read_bytes()).hexdigest()[:16],

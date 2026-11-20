@@ -34,7 +34,11 @@ REC <- file.path("records", basename(STUDY))
 
 TABLES <- "records/tables"
 OUT <- REC
-PREREG <- file.path(STUDY, "prereg/norris-r3-v1.json")
+ARGS <- commandArgs(trailingOnly = TRUE)
+prereg_file <- if (length(ARGS) >= 1) ARGS[[1]] else "norris-r3-v1.json"
+out_file <- if (length(ARGS) >= 2) ARGS[[2]] else "trials.csv"
+PREREG <- file.path(STUDY, "prereg", prereg_file)
+OUT_FILE <- file.path(OUT, out_file)
 CONDS <- file.path(STUDY, "conditions.json")
 INTERP <- file.path(STUDY, "interpreters.json")
 FEATS <- file.path(STUDY, "features.json")
@@ -51,6 +55,10 @@ chr <- function(x) {
 prereg <- fromJSON(PREREG, simplifyVector = FALSE)
 PLAN <- file.path(REC, "plan", paste0(chr(prereg$plan_id), ".jsonl"))
 JUDGE <- file.path(REC, "judgment", basename(chr(prereg$criteria)))
+expected_model <- chr(prereg$model)
+if (is.na(expected_model)) expected_model <- "DeepSeek-V4.1-Flash-1017"
+expected_route <- chr(prereg$route$route_model)
+if (is.na(expected_route)) expected_route <- "wb/deepseek-v4.1-flash"
 
 # ==============================================================================
 # 1. The study's own declarations
@@ -124,6 +132,7 @@ trials <- observations |>
     stimulus_id,
     input_id,
     slot = ws_name,
+    model = if_else(route_model == expected_route, expected_model, NA_character_),
     wording = str_remove(slot, "-\\d+$"),
     rep_in_slot = as.integer(str_extract(slot, "\\d+$")),
     stop_reason,
@@ -171,11 +180,18 @@ trials_plan <- trials |>
   filter(in_plan) |>
   mutate(round = as.integer(round))
 
+if (any(is.na(trials_plan$model)) || any(trials_plan$model != expected_model)) {
+  cat("a trial in this plan came from an unexpected model route:\n")
+  trials_plan |> filter(is.na(model) | model != expected_model) |>
+    distinct(run_id, slot) |> print(n = Inf)
+  quit(status = 2)
+}
+
 # ==============================================================================
 # 4. Write and check
 # ==============================================================================
 
-write_csv(trials_plan, file.path(OUT, "trials.csv"))
+write_csv(trials_plan, OUT_FILE)
 
 cat(sprintf("trials : %d rows (this plan)\n", nrow(trials_plan)))
 cat(sprintf(

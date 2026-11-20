@@ -34,7 +34,10 @@ suppressPackageStartupMessages({
 STUDY <- "studies/workspace-name-cue"
 REC <- file.path("records", basename(STUDY))
 TABLES <- "records/tables"
-TRIALS <- file.path(REC, "trials.csv")
+ARGS <- commandArgs(trailingOnly = TRUE)
+trials_file <- if (length(ARGS) >= 1) ARGS[[1]] else "trials.csv"
+summary_dir <- if (length(ARGS) >= 2) ARGS[[2]] else "summary"
+TRIALS <- file.path(REC, trials_file)
 
 trials <- read_csv(TRIALS, show_col_types = FALSE, progress = FALSE)
 calls <- read_csv(file.path(TABLES, "calls.csv"), show_col_types = FALSE, progress = FALSE)
@@ -425,7 +428,7 @@ cat("   the difference between naming and executing is reported rather than reso
 # quoted in the abstract stay in the prose, because they are the argument, not a derived
 # table -- and because their real implementation is cue_effect.py's enumeration, which a
 # second computation inside a document would only rival, not verify.
-SUM <- file.path(REC, "summary")
+SUM <- file.path(REC, summary_dir)
 dir.create(SUM, recursive = TRUE, showWarnings = FALSE)
 
 # --- the five numbers behind "cost is flat" ----------------------------------------

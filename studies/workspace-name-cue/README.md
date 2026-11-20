@@ -4,7 +4,7 @@
 
 ## 结论
 
-`P(Y=R | r-eco) − P(Y=R | software)` = **+0.2639**（30/72 vs 11/72），措辞层面精确置换单侧 **p = 0.0002**。
+在 DeepSeek-V4.1-Flash-1017 上，`P(Y=R | r-eco) − P(Y=R | software)` = **+0.2639**（30/72 vs 11/72），措辞层面精确置换单侧 **p = 0.0002**。
 
 | 条件 | 12 个措辞 | `P(Y=R)` |
 |---|---|---|
@@ -16,6 +16,8 @@
 **这条提升是"试一下"，不是"改用"。** 288 次里"点名了 R 却没点名 Python"只有 **5 次**，且全部在 `r-eco` 组；以 R 开头的 61 条里 56 条（92%）随后又点名了 Python，而以 Python 开头的 202 条里只有 1 条（0.5%）回头点名 R。所以主结论应读成"cue 把 R 加进了候选"，不是"cue 把语言换掉了"，见 [fig-mixed](../../records/workspace-name-cue/figures/fig-mixed.png)。按条件算的混用率（`r-eco` 26/72 等）不能回答这个问题：它同时取决于该组有多少次先用了 R。
 
 六对 pairwise 已补齐（[`cue_effect.py`](analysis/cue_effect.py) §3b）。`r-eco vs py-eco` 在 `P(Y=R)` 上是 +0.3611，p < 0.0001（43/2704156），所以效应不是"软件味"带来的。完整依据、两次仪器故障、以及这批数据管不住什么 → [notes/2026-11-12-cue-effect-result.md](notes/2026-11-12-cue-effect-result.md)。
+
+**跨模型复制没有以同等强度复现。** Kimi-K3.1-Pro 的主对比为 **7/72 vs 0/72，Δ=+0.0972，p=0.1087**；与原模型的 Δ 差为 **−0.1667**，配对措辞 bootstrap 95% 区间约 **[−0.3056，约 0.00]**。Kimi 的 7 次首次 R 全部实际执行了 R，所以这是较弱且未达显著的同向信号，不是"只点名没运行"，也不能反过来说 cue 已被证明无效。见 [跨模型报告](REPORT.qmd#sec-cross-model)、[预注册](prereg/norris-r4-v1.json) 与 [依据记录](notes/2026-11-21-cross-model-replication.md)。
 
 ## 为什么叫这个名字
 
@@ -56,6 +58,9 @@
 | `cue_persistence.R` | 报告里五张派生表的唯一来源：多数派是否等于第一步、位置三分、双命中构成、三种结局定义下的同一检验、秩相关。写 `records/<id>/summary/*.csv`，报告只读不算 |
 | `cue_tables.R` | 一行一个 trial 的整洁表 `trials.csv`，接上条件/分类/顺序/判定 |
 | `cue_report.R` | 估计与作图（读 `trials.csv`） |
+| `cue_cross_model.py` | 两模型分别计算后的配对措辞 bootstrap 与跨模型差值区间 |
+| `cue_cross_model_figure.R` | 跨模型主对比总览图 |
+| `cue_cross_model_figures.R` | 原五类图的双模型版本：小多图、成对哑铃、模型轨迹与分面 |
 
 ### 图
 
@@ -67,7 +72,8 @@
 | `fig-rank` | 是类别还是一个名字：24 个措辞排序 + 各自 Wilson 95% 区间（**假设 6 次重复独立**，若相关则区间更宽） |
 | `fig-blocks` | 是不是某一批碰巧：六个 block 的哑铃，方向全部同向 |
 | `fig-mixed` | 提升是"改用"还是"试一下"：每个试次点名过的运行时组合，按四组堆叠；深红（只用 R）只在 `r-eco` 出现 |
-| `fig-effort` | 是不是只是更用力：steps / tool calls / out tokens 三视图 |
+| `fig-effort` | 是不是只是更用力：steps / tool calls / out tokens 三视图；双模型分别比较 |
+| `fig-cross-model` | 两模型四条件的首次 R 率总览：效应是否按原强度复现 |
 
 不成图的维度（逐 trial 的 `round`×条件 24 格、6 条 missing 明细）留在正文表里：把表画成图只是换个形式，不是多一个信息。
 
@@ -77,9 +83,15 @@
 export ASSAY_SLOTS=<槽位根>
 Rscript analysis/index_tables.R                          # 仪器层三张表
 Rscript studies/workspace-name-cue/analysis/cue_tables.R # 本研究的 trials.csv
+Rscript studies/workspace-name-cue/analysis/cue_tables.R norris-r4-v1.json trials-kimi.csv
 python  studies/workspace-name-cue/analysis/cue_effect.py
+python  studies/workspace-name-cue/analysis/cue_effect.py --prereg studies/workspace-name-cue/prereg/norris-r4-v1.json --out records/workspace-name-cue/judgment/cue-effect-kimi.json
 Rscript studies/workspace-name-cue/analysis/cue_persistence.R  # summary/*.csv
+Rscript studies/workspace-name-cue/analysis/cue_persistence.R trials-kimi.csv summary-kimi
+python  studies/workspace-name-cue/analysis/cue_cross_model.py  # 配对措辞 bootstrap 与对照表
 Rscript studies/workspace-name-cue/analysis/cue_report.R
+Rscript studies/workspace-name-cue/analysis/cue_cross_model_figure.R
+Rscript studies/workspace-name-cue/analysis/cue_cross_model_figures.R  # 最终图均为双模型版本
 cd studies/workspace-name-cue && quarto render REPORT.qmd   # 叙述报告，需先有 figures 与 summary/
 ```
 
