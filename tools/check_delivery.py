@@ -41,7 +41,10 @@ for d in sorted(os.listdir(RUNS)):
     if not os.path.exists(rj_path):
         continue
     rj = json.load(open(rj_path, encoding='utf-8'))
-    slot = os.path.basename(rj['task']['cwd'])
+    cwd = rj.get('task', {}).get('cwd')
+    if not cwd:
+        continue
+    slot = os.path.basename(cwd)
     if slot not in plan:
         continue
     if args.through is not None and plan[slot]['order'] > args.through:

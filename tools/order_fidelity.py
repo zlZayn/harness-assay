@@ -30,7 +30,10 @@ for d in RUNS.iterdir():
     if not p.exists():
         continue
     rj = json.loads(p.read_text(encoding='utf-8'))
-    slot = pathlib.PureWindowsPath(rj['task']['cwd']).name
+    cwd = rj.get('task', {}).get('cwd')
+    if not cwd:
+        continue
+    slot = pathlib.PureWindowsPath(cwd).name
     if slot not in plan:
         continue
     actual.append((rj['startedAt'], plan[slot], slot))
