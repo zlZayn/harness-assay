@@ -1,0 +1,111 @@
+{
+  "prereg_id": "norris-r4-v1",
+  "status": "declared, not yet run",
+  "_extends": "norris-r3-v1.json; this is a cross-model replication within the same study, not a new study directory and not a replacement of the original 288 trials.",
+  "_what": "Everything decided before the Kimi-K3.1-Pro replication batch. The original DeepSeek-V4.1-Flash-1017 records and preregistration remain unchanged.",
+
+  "plan_id": "norris-ols-k6-r07-e6eaa4aa89c3",
+  "_plan_id_note": "Generated with: python tools/batch_plan.py --task norris-ols --k 6 --rep-start 7 --family r-eco,py-eco,software,plain. Replicate suffixes 07-12 keep the new slots disjoint from the original 01-06 slots while preserving the wording and path structure.",
+  "task": "norris-ols",
+  "criteria": "criteria/norris-v1.json",
+  "conditions_source": "conditions.json",
+  "arms_source": "arms.json",
+
+  "model": "Kimi-K3.1-Pro",
+  "reference_model": "DeepSeek-V4.1-Flash-1017",
+  "route": {
+    "provider": "magpie",
+    "route_model": "tianxi/Kimi-K3.1-Pro",
+    "reasoning_effort": "high",
+    "max_tokens": 384000,
+    "_why": "The display name is Kimi-K3.1-Pro; the fully qualified route id is operational metadata. high and the token ceiling match the values observed in the original batch."
+  },
+  "harness": {
+    "file": "assay-neutral",
+    "sealed": true,
+    "expected_tools": ["edit", "pwsh", "read", "write"],
+    "_note": "sealed lives inside the harness argument. Structured_output is added by the dispatcher and is expected in the delivered tool table."
+  },
+
+  "design": {
+    "conditions": ["r-eco", "py-eco", "software", "plain"],
+    "wordings_per_condition": 12,
+    "new_replicates_per_wording": 6,
+    "replicate_suffixes": [7, 8, 9, 10, 11, 12],
+    "trials": 288,
+    "order": "rep-major within the new plan: six rounds of 48, one of every wording per round; plan orders 1-288",
+    "token_matching": "All 288 new full paths cost exactly 11 tokens under the declared o200k_base proxy, measured after generating the plan. This is not claimed to be the new model's own tokenizer.",
+    "reference_batch": "The reference is the existing 288-trial DeepSeek-V4.1-Flash-1017 batch under norris-ols-k6-7a8e2a45c2f1. It is not pooled blindly with the new observations."
+  },
+
+  "execution": {
+    "concurrency": {
+      "maximum_in_flight": 6,
+      "dispatch": "Dispatch in nondecreasing plan order, in waves of at most six; collect every wave before dispatching the next. Parallelism is for wall-clock efficiency only.",
+      "order_fidelity": "Measure actual startedAt order after each sub-batch. Concurrency may produce local inversions; report them rather than pretending the start order was serial. No outcome-based reordering or exclusion is allowed.",
+      "_why_not_trials_parameter": "One call per slot. harness_run trials within one call reuse a cwd; separate calls are required for workspace isolation."
+    },
+    "sub_batches": [
+      { "n": 1, "orders": [1, 96], "trials": 96, "rounds": [7, 8] },
+      { "n": 2, "orders": [97, 192], "trials": 96, "rounds": [9, 10] },
+      { "n": 3, "orders": [193, 288], "trials": 96, "rounds": [11, 12] }
+    ],
+    "host_window": "For each sub-batch: python tools/patch_host_notice.py --apply --expect patched, reload @deepseek-ai/dsh-working-directory, run, snapshot, then --revert --expect original and reload again. The rc.3 original and patched hashes were calibrated by a real apply/revert round trip on 2026-11-20 before this declaration.",
+    "first_trial_gate": "Before trial 2, verify completed or otherwise observable outcome, sealed=true, the four harness tools plus structured_output, cwd injection exactly as designed, and record the host toolSchemaDigest/systemPrompt digest as this batch's reference. A route or mounting failure is instrumental, not a model outcome.",
+    "gate_after_each_group_of_12": [
+      "one toolSchemaDigest and one systemPrompt.digest across the whole new batch",
+      "sha256(run.json task.prompt) matches the plan prompt_sha",
+      "run.json task.outputSchema is the declared schema, with the original key order: type, properties, required; properties b0,b1,se_b0,se_b1,resid_sd,r2",
+      "exposure remains limited to the intended slot path; no operator session root is injected",
+      "record stop reasons; structured-answer missing is not by itself an exclusion"
+    ],
+    "gate_after_each_sub_batch": [
+      "workspace.py snapshot for every completed slot",
+      "order_fidelity on the new plan",
+      "check_delivery --through the sub-batch's last order",
+      "audit_controls and audit_environment --through the same order",
+      "host --check must read original after the window closes, with no backup left"
+    ]
+  },
+
+  "analysis": {
+    "outcome": "The preregistered replication outcome is unchanged: Y = the first executed tool call whose arguments name a runtime, using interpreters.json in its existing row order; none remains in the denominator as not R.",
+    "primary": {
+      "contrast": "P(Y=R | r-eco, Kimi-K3.1-Pro) - P(Y=R | software, Kimi-K3.1-Pro)",
+      "test": "wording-level exact one-sided permutation over the 24 wordings, C(24,12) assignments",
+      "replication_question": "Does the direction and magnitude found in DeepSeek-V4.1-Flash-1017 recur in Kimi-K3.1-Pro?"
+    },
+    "secondary": [
+      "The other declared r3 contrasts, computed within Kimi-K3.1-Pro only",
+      "P(ever executes R code | r-eco) - P(ever executes R code | software), using the already published Rscript invocation rule and the same wording-level exact test; this is now declared before the new batch rather than added afterward",
+      "Per-wording rates, block direction, zero-tool rate, runtime-use rate, mixed-runtime count, effort and correctness summaries",
+      "Cross-model differences in rates and contrasts, labelled between-batch heterogeneity. Report both models side by side; do not infer a model difference from one p value being significant and the other not"
+    ],
+    "cross_model_estimand": "Delta(Kimi-K3.1-Pro) - Delta(DeepSeek-V4.1-Flash-1017), with a paired wording-level cluster bootstrap interval (10000 resamples of the 24 wordings in the primary pair). This is descriptive evidence of heterogeneity, not a clean randomized model-effect estimate because host version and calendar batch also differ.",
+    "_not_analysed": [
+      "no pooling of the two models without a model indicator",
+      "no exclusion of zero-tool, no-runtime, mixed, or structured-missing trials from the primary denominator",
+      "no claim that two models identify a training-corpus mechanism",
+      "no post-hoc selection of wordings, outcomes, or favorable sub-batches"
+    ]
+  },
+
+  "decision_rules": {
+    "instrument_only_discard": "Only route, mounting, exposure, delivery, or workspace failures that prevent a valid observation may be quarantined and rerun. Never discard because the observed runtime or answer is undesirable. Keep the failed run directory and a contemporaneous reason.",
+    "observed_agent_errors": "A trial with an error stop but an observable first runtime remains in the primary analysis, matching the original batch. A structured-answer miss likewise remains in the denominator.",
+    "stop_if": [
+      "zero-tool-call rate above 1/3 overall: mark the task exploratory for this model and report no confirmatory cue effect",
+      "runtime-use rate below 2/3: report dilution; do not remove no-runtime trials",
+      "exposure or delivery gate fails: stop, quarantine the affected group, repair the instrument, and rerun under the declared rule"
+    ],
+    "no_interim_contrast": "Do not compute the condition contrast until all 288 new trials are complete. Instrument readings and per-trial completion checks are permitted."
+  },
+
+  "_known_limitations": [
+    "Only one new model is added. Replication and between-model heterogeneity are informative, but training-corpus composition is not identified.",
+    "The new batch runs on a later host package version than the reference batch. Any delivered tool-schema difference is recorded and reported as a between-batch limitation, not hidden by pooling.",
+    "The o200k_base token match is a proxy, not a measurement with Kimi-K3.1-Pro's own tokenizer.",
+    "Replicate suffixes differ between models (01-06 versus 07-12). They have the same proxy path-token cost and are part of the new plan identity.",
+    "Parallel dispatch can produce local start-order inversions. Actual order is measured and reported; condition interleaving follows the fixed plan."
+  ]
+}

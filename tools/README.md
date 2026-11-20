@@ -13,7 +13,7 @@
 | `exposure_check.py` | 交付上下文里有没有没人声明的 cue | 跑批前的闸门 | 占一个词表里的槽位必须 FAIL |
 | `check_delivery.py` | 每 12 条核对一次：交付的工具表/系统提示仍唯一、题面仍等于 plan | 跑批中途的闸门 | 故意改一次 schema 键序应 exit 2 |
 | `patch_host_notice.py` | 宿主通知的窗口补丁 | 跑批前后各一次 | `--apply --expect patched` 后 `--check` 读 patched；`--revert` 后读 original 且包目录只剩原件 |
-| `batch_plan.py` | 臂表 + 题面 → 待跑表（按重复交错）；跑前后各查一次：槽位状态、宿主摘要单值、记录与声明是否逐字节一致 | 跑批 | `--verify` 在占位槽位上 exit 2；摘要或题面不符也 exit 2 |
+| `batch_plan.py` | 臂表 + 题面 → 待跑表（按重复交错）；`--rep-start` 可追加不重叠的后续重复；跑前后各查一次：槽位状态、宿主摘要单值、记录与声明是否逐字节一致 | 跑批 | `--verify` 在占位槽位上 exit 2；摘要或题面不符也 exit 2 |
 | `audit_controls.py` | 控制变量必须单值、处理必须真的变了 | 跑批后 | 换模板后槽位应报 STALE |
 | `audit_environment.py` | 窗口 vs 残留；槽位与记录完整性 | 跑批后 | 有未提交改动或残留补丁应 FAIL |
 | `order_fidelity.py` | 实际启动顺序 vs plan 顺序 | 每个子批后 | 手工打乱一批应出现逆序 |

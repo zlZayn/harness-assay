@@ -63,11 +63,13 @@ PATCHED = (
 )
 
 # Known bytes, so "is the host clean?" is answered by a hash rather than by a substring.
-# Measured on @deepseek-ai/dsh-working-directory 0.2.2-rc.1, 2026-11-12. A new upstream
-# version will not match these, which is exactly when a human should look.
+# rc.1 hashes measured on 2026-11-12; rc.3 hashes measured on 2026-11-20.
+# A new upstream version will not match these, which is exactly when a human should look.
 KNOWN_SHA256 = {
     "76b2f53517bc3312084bc062ce8bbc4111f3b723d96da080157046c2b6d4766a": "original",
+    "03cb7ebdaa8b97cfc3170320d04446b99ce939349696289b49549d1e96cea59b": "original",
     "a1599cf6dfe9b2dbb1d62f83dde6f725ecbc969c44e3142367e8a68eea51ba13": "patched",
+    "ce53a3b35c661f85d2bf5fcc1fbd02e0583d6fadde51c6421c10df2695f6fb0e": "patched",
 }
 
 BACKUP_SUFFIX = ".bak-assay"

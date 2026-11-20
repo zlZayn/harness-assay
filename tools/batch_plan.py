@@ -66,7 +66,8 @@ def sha(obj, n: int = 12) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:n]
 
 
-def build(selected: list[dict], task: dict, k: int, plan_id: str, root: pathlib.Path) -> list[dict]:
+def build(selected: list[dict], task: dict, k: int, plan_id: str, root: pathlib.Path,
+          rep_start: int = 1) -> list[dict]:
     """One row per trial, interleaved by replicate.
 
     The slot name carries the cue, so the replicate is a suffix -- but the *sequence* is not
@@ -83,7 +84,7 @@ def build(selected: list[dict], task: dict, k: int, plan_id: str, root: pathlib.
     """
     rows = []
     order = 0
-    for rep in range(1, k + 1):
+    for rep in range(rep_start, rep_start + k):
         for arm in selected:
             order += 1
             slot = f"{arm['slot'].rsplit('-', 1)[0]}-{rep:02d}"
@@ -279,7 +280,9 @@ def verify(rows: list[dict], task: dict, expect_complete: bool, root: pathlib.Pa
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--task", required=True, help="a file name under the study's tasks dir")
-    ap.add_argument("--k", type=int, default=5, help="replicates per arm")
+    ap.add_argument("--k", type=int, default=5, help="new replicates per arm")
+    ap.add_argument("--rep-start", type=int, default=1,
+                    help="first replicate suffix; use a later value for a non-overlapping follow-up")
     ap.add_argument("--family", default="",
                     help="comma-separated families to include; default every arm in the table")
     ap.add_argument("--verify", action="store_true", help="check the plan against disk")
@@ -301,12 +304,21 @@ def main() -> int:
         print(f"no arm in families {wanted}; the table declares {known}", file=sys.stderr)
         return 1
 
+    if args.rep_start < 1:
+        print("--rep-start must be at least 1", file=sys.stderr)
+        return 2
+
     # Order is part of the plan's identity: the same arms in a different sequence are a
     # different experiment, and the id should not let the two look like the same thing.
-    plan_id = f"{args.task}-k{args.k}-" \
-              f"{sha(selected + [task['prompt'], task['schema'], 'rep-major'])}"
+    # A later replicate range is also a different set of slots. Keep the historical hash
+    # unchanged for the default range, while making a follow-up range explicit in both
+    # the readable id and the hashed declaration.
+    follow_up = [{"rep_start": args.rep_start}] if args.rep_start != 1 else []
+    plan_tag = f"{args.task}-k{args.k}" + (f"-r{args.rep_start:02d}" if follow_up else "")
+    plan_id = f"{plan_tag}-" \
+              f"{sha(selected + [task['prompt'], task['schema'], 'rep-major'] + follow_up)}"
     root = slots_root()
-    rows = build(selected, task, args.k, plan_id, root)
+    rows = build(selected, task, args.k, plan_id, root, args.rep_start)
 
     if args.verify:
         print(f"plan {plan_id}\n")
