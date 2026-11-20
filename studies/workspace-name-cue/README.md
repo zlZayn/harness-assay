@@ -11,13 +11,13 @@
 | `r-eco` | dplyr ggplot knitr patchwork purrr readr rlang scales shiny stringr forcats | 30/72 = 0.4167 |
 | `software` | ansible cilium consul etcd gitlab grafana istio jenkins kafka minio nginx prometheus | 11/72 = 0.1528 |
 
-两边**都是软件项目名**，所以"像不像软件项目"被固定住，只有"是不是 R"在变。区间 [+0.153, +0.389]，六个 block 全部同向，零工具调用 0/288（不是在背答案）。
+两边**都是软件项目名**，共享“像软件项目”的背景；词频、熟悉度和社区联想并未完全匹配。主对比区间 [+0.153, +0.389]，原批六轮均为正，零工具调用 0/288（降低整批凭记忆直接作答的担忧，但不能识别每条答案来源）。
 
-**这条提升是"试一下"，不是"改用"。** 288 次里"点名了 R 却没点名 Python"只有 **5 次**，且全部在 `r-eco` 组；以 R 开头的 61 条里 56 条（92%）随后又点名了 Python，而以 Python 开头的 202 条里只有 1 条（0.5%）回头点名 R。所以主结论应读成"cue 把 R 加进了候选"，不是"cue 把语言换掉了"，见 [fig-mixed](../../records/workspace-name-cue/figures/fig-mixed.png)。按条件算的混用率（`r-eco` 26/72 等）不能回答这个问题：它同时取决于该组有多少次先用了 R。
+**这条提升是“进入首次候选”，不是已证实的“更换主语言”。** 288 次里只点名 R 的有 **5 次**，且全部在 `r-eco` 组；以 R 标签开头的 61 条里，56 条（92%）在整个试次中还点名 Python，且这 56 条的首次调用本身就同时命中两者；以 Python 开头的 202 条里只有 1 条（0.5%）还点名 R。最终完成计算的运行时未记录，见 [fig-mixed](../../records/workspace-name-cue/figures/fig-mixed.png)。按条件算的混用率（`r-eco` 26/72 等）不能回答这个问题：它同时取决于该组有多少次先用了 R。
 
-六对 pairwise 已补齐（[`cue_effect.py`](analysis/cue_effect.py) §3b）。`r-eco vs py-eco` 在 `P(Y=R)` 上是 +0.3611，p < 0.0001（43/2704156），所以效应不是"软件味"带来的。完整依据、两次仪器故障、以及这批数据管不住什么 → [notes/2026-11-12-cue-effect-result.md](notes/2026-11-12-cue-effect-result.md)。
+六对 pairwise 已补齐（[`cue_effect.py`](analysis/cue_effect.py) §3b）。`r-eco vs py-eco` 在 `P(Y=R)` 上是 +0.3611，p < 0.0001（43/2704156），支持包名类别之间的差异，但不能据此排除词频、熟悉度或量程位置的影响。完整依据、两次仪器故障、以及这批数据管不住什么 → [notes/2026-11-12-cue-effect-result.md](notes/2026-11-12-cue-effect-result.md)。
 
-**跨模型复制没有以同等强度复现。** Kimi-K3.1-Pro 的主对比为 **7/72 vs 0/72，Δ=+0.0972，p=0.1087**；与原模型的 Δ 差为 **−0.1667**，配对措辞 bootstrap 95% 区间约 **[−0.3056，约 0.00]**。Kimi 的 7 次首次 R 全部实际执行了 R，所以这是较弱且未达显著的同向信号，不是"只点名没运行"，也不能反过来说 cue 已被证明无效。见 [跨模型报告](REPORT.qmd#sec-cross-model)、[预注册](prereg/norris-r4-v1.json) 与 [依据记录](notes/2026-11-21-cross-model-replication.md)。
+**跨模型复制没有以同等强度复现。** Kimi-K3.1-Pro 的主对比为 **7/72 vs 0/72，Δ=+0.0972，p=0.1087**；与原模型的 Δ 差为 **−0.1667**，配对措辞 bootstrap 95% 区间约 **[−0.3056，约 0.00]**。Kimi 的 7 次首次 R 全部有 Rscript 执行调用，所以这是较弱且未达显著的同向信号，不是"只点名、没有执行调用"，也不能反过来说 cue 已被证明无效。见 [跨模型报告](REPORT.qmd)、[预注册](prereg/norris-r4-v1.json) 与 [依据记录](notes/2026-11-21-cross-model-replication.md)。
 
 ## 为什么叫这个名字
 
@@ -30,7 +30,7 @@
 | 路径 | 是什么 | 谁读 |
 |---|---|---|
 | `study.json` | 清单：这个研究的 arms / tasks / template / 各声明文件在哪。**通用工具只认这个形状** | `tools/batch_plan.py`、`workspace.py`、两个 audit |
-| [`REPORT.qmd`](REPORT.qmd) | **给人读的完整叙述**：问题、怎么做的、怎么保证干净、结果、局限、结论。不含代码 | 人；先读这个 |
+| [`REPORT.qmd`](REPORT.qmd) | **给人读的完整叙述**：问题、设计、结果、局限与结论；正文不手算，表格读取派生文件 | 人；先读这个 |
 | [`REPORT.html`](REPORT.html) | 上者的渲染产物，自包含（图内嵌、无 CDN），离线可看 | 人；分享用 |
 | [`DESIGN.md`](DESIGN.md) | 统计设计：估计量、三条禁忌、量程受限、容差推导 | 人；改设计前必读 |
 | `arms.json` | 臂表：按实测 token 声明，含切分器与版本 | `batch_plan`、`cue_tokens` |
@@ -55,7 +55,7 @@
 | `exposure_report.py` | 那次操纵到底发生了没有 |
 | `process_report.py` | 逐 trial 的运行时分类，按臂汇总（只描述，不出 p 值） |
 | `cue_effect.py` | 执行 prereg 声明的对比：措辞层面精确置换，穷举 C(n,k) |
-| `cue_persistence.R` | 报告里五张派生表的唯一来源：多数派是否等于第一步、位置三分、双命中构成、三种结局定义下的同一检验、秩相关。写 `records/<id>/summary/*.csv`，报告只读不算 |
+| `cue_persistence.R` | 生成多数派、位置、双命中、结局敏感性与秩相关派生表；报告读取位置和规则表，其余留作依据。写 `records/<id>/summary/*.csv`，报告只读不算 |
 | `cue_tables.R` | 一行一个 trial 的整洁表 `trials.csv`，接上条件/分类/顺序/判定 |
 | `cue_report.R` | 估计与作图（读 `trials.csv`） |
 | `cue_cross_model.py` | 两模型分别计算后的配对措辞 bootstrap 与跨模型差值区间 |
@@ -64,15 +64,15 @@
 
 ### 图
 
-五张，各回答 permutation p 值回答不了的一个问题。产物在 `records/workspace-name-cue/figures/`（派生，不入库）。
+六张：原五类图的双模型版本，加一张跨模型总览。产物在 `records/workspace-name-cue/figures/`（派生，不入库）。
 
 | 图 | 回答什么 |
 |---|---|
-| `fig-contrast` | 差多少：四条件同一 0–1 轴，点=一个措辞，粗点=条件均值，灰条=95% bootstrap |
-| `fig-rank` | 是类别还是一个名字：24 个措辞排序 + 各自 Wilson 95% 区间（**假设 6 次重复独立**，若相关则区间更宽） |
-| `fig-blocks` | 是不是某一批碰巧：六个 block 的哑铃，方向全部同向 |
-| `fig-mixed` | 提升是"改用"还是"试一下"：每个试次点名过的运行时组合，按四组堆叠；深红（只用 R）只在 `r-eco` 出现 |
-| `fig-effort` | 是不是只是更用力：steps / tool calls / out tokens 三视图；双模型分别比较 |
+| `fig-contrast` | 差多少：四条件同一 0–100% 轴，小点=一个名字，粗点与横线=条件均值及 95% 聚类 bootstrap 区间 |
+| `fig-rank` | 是类别还是单个名字：主对比 24 个名字的成对哑铃图；不逐个名字作推断 |
+| `fig-blocks` | 是不是某一轮碰巧：六轮模型轨迹；原批六轮均正，Kimi 五正一零 |
+| `fig-mixed` | R 是新增候选还是主语言替换：四条件的运行时组合；最终主语言未被记录 |
+| `fig-effort` | 是不是只是更用力：四条件共用纵轴，步数、工具调用和输出 token 分面，横轴独立 |
 | `fig-cross-model` | 两模型四条件的首次 R 率总览：效应是否按原强度复现 |
 
 不成图的维度（逐 trial 的 `round`×条件 24 格、6 条 missing 明细）留在正文表里：把表画成图只是换个形式，不是多一个信息。
@@ -97,7 +97,7 @@ cd studies/workspace-name-cue && quarto render REPORT.qmd   # 叙述报告，需
 
 报告里的图由 `cue_report.R` 生成、表由 `cue_persistence.R` 生成，所以**两者都必须在渲染之前跑过**：缺图会渲染出裂图，缺表会让 `read.csv` 直接报错停下——后者是故意的，宁可渲染失败，也不让报告退回手写数字。
 
-`REPORT.qmd` 里的图指向 `../../records/.../figures/*.png`，表读 `../../records/.../summary/*.csv`，路径都相对 qmd 文件本身；渲染结果 `REPORT.html` 把图内嵌成 base64，离开仓库也打得开。文档里不用 LaTeX（`html-math-method: plain`），否则默认会从 CDN 拉 MathJax，离线时公式不渲染。
+`REPORT.qmd` 里的图指向 `../../records/.../figures/*.png`，表读 `../../records/.../summary/*.csv`，路径都相对 qmd 文件本身；渲染结果 `REPORT.html` 把图内嵌成 base64，离开仓库也打得开。数学式以 MathML 输出（`html-math-method: mathml`），不加载 MathJax 或其他 CDN 资源。
 
 产物分工：`records/index.jsonl` 与 `records/tables/*.csv` 是**仪器级**（覆盖这台机器上所有 run）；`records/workspace-name-cue/` 下才是**本研究**的 plan、judgment、ws、`trials.csv`、`summary/`、figures。
 
