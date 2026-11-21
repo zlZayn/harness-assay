@@ -65,7 +65,7 @@ p <- ggplot(by_condition, aes(x = rate, y = condition, colour = model, group = m
   ) +
   coord_cartesian(xlim = c(-0.025, 0.47)) +
   labs(
-    title = "R 包名效应在 Kimi 中较弱",
+    title = "Kimi-K3.1-Pro 的 R 包名效应较弱",
     subtitle = "每点汇总 72 次试次；数字为首次 R 次数，线连接同一条件",
     x = "首次点名 R 的比例", y = NULL,
     caption = "两个模型各 288 次试次"

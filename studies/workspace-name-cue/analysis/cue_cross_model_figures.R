@@ -129,7 +129,7 @@ p_rank <- ggplot(ranked, aes(x = p_r, y = wording, colour = model)) +
     limits = c(0, 1), breaks = c(0, 0.5, 1), labels = label_percent()
   ) +
   labs(
-    title = "Kimi 的 R 信号集中在少数 R 包名",
+    title = "Kimi-K3.1-Pro 的 R 信号集中于少数 R 包名",
     subtitle = "每点为一个名字的 6 次试次；线连接同一名字",
     x = "首次点名 R 的比例", y = NULL,
     caption = "仅展示主对比的 24 个名字；不逐个名字作推断"
@@ -159,7 +159,7 @@ p_blocks <- ggplot(by_block, aes(x = round, y = delta_pp, colour = model, group 
   scale_y_continuous(breaks = seq(0, 30, 10)) +
   coord_cartesian(ylim = c(-1, 36)) +
   labs(
-    title = "DeepSeek 六轮均为正，Kimi 一轮为零",
+    title = "六轮主对比的方向",
     subtitle = "每点为一轮；R 包名与独立软件名各 12 次试次",
     x = "轮次", y = "R 率差（百分点）",
     caption = "每模型 6 轮，共 288 次试次"
@@ -205,7 +205,7 @@ p_mix <- ggplot(mix, aes(x = share, y = condition, fill = kind)) +
   scale_y_discrete(labels = condition_labels) +
   scale_x_continuous(expand = expansion(mult = c(0, 0))) +
   labs(
-    title = "DeepSeek 中的 R 通常与 Python 同现",
+    title = "DeepSeek-V4.1-Flash-1017：R 多与 Python 同现",
     subtitle = "每条为 72 次试次；数字为试次数，过窄分段不标",
     x = NULL, y = NULL,
     caption = "每模型共 288 次试次"
@@ -233,7 +233,20 @@ effort_medians <- effort |>
   summarise(median = median(value), q1 = quantile(value, 0.25), q3 = quantile(value, 0.75), .groups = "drop")
 write_csv(effort_medians, file.path(SUM, "cross-model-effort.csv"))
 
+three_marks <- tibble(
+  metric = factor(c("步数", "工具调用数"), levels = levels(effort$metric)),
+  x = 3, y = 0.56, label = "3"
+)
+
 p_effort <- ggplot(effort, aes(x = value, y = condition, colour = model, group = interaction(condition, model))) +
+  geom_rug(
+    data = three_marks, aes(x = x), inherit.aes = FALSE, sides = "b",
+    colour = "#A8AEA5", linetype = "dashed", linewidth = 0.45
+  ) +
+  geom_text(
+    data = three_marks, aes(x = x, y = y, label = label), inherit.aes = FALSE,
+    size = text_size("caption"), family = ASSAY_MONO, colour = "#7A8278"
+  ) +
   geom_boxplot(
     position = position_dodge(width = 0.70), width = 0.60,
     outlier.shape = 21, outlier.size = 0.75, outlier.alpha = 0.30,
@@ -243,8 +256,8 @@ p_effort <- ggplot(effort, aes(x = value, y = condition, colour = model, group =
   scale_colour_manual(values = model_palette) +
   scale_y_discrete(labels = condition_labels) +
   labs(
-    title = "模型间工作量不同，条件内分布相近",
-    subtitle = "箱体为四分位距，中线为中位数；三个面板横轴独立",
+    title = "Kimi-K3.1-Pro 多数流程为 3，少数试次明显更长",
+    subtitle = "箱体为四分位距；底部淡虚线标出 3，三个面板横轴独立",
     x = NULL, y = NULL,
     caption = "每模型每条件 72 次试次"
   ) +

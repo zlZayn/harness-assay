@@ -17,7 +17,7 @@
 
 六对 pairwise 已补齐（[`cue_effect.py`](analysis/cue_effect.py) §3b）。`r-eco vs py-eco` 在 `P(Y=R)` 上是 +0.3611，p < 0.0001（43/2704156），支持包名类别之间的差异，但不能据此排除词频、熟悉度或量程位置的影响。完整依据、两次仪器故障、以及这批数据管不住什么 → [notes/2026-11-12-cue-effect-result.md](notes/2026-11-12-cue-effect-result.md)。
 
-**跨模型复制没有以同等强度复现。** Kimi-K3.1-Pro 的主对比为 **7/72 vs 0/72，Δ=+0.0972，p=0.1087**；与原模型的 Δ 差为 **−0.1667**，配对措辞 bootstrap 95% 区间约 **[−0.3056，约 0.00]**。Kimi 的 7 次首次 R 全部有 Rscript 执行调用，所以这是较弱且未达显著的同向信号，不是"只点名、没有执行调用"，也不能反过来说 cue 已被证明无效。见 [跨模型报告](REPORT.qmd)、[预注册](prereg/norris-r4-v1.json) 与 [依据记录](notes/2026-11-21-cross-model-replication.md)。
+**跨模型复制没有以同等强度复现。** Kimi-K3.1-Pro 的主对比为 **7/72 vs 0/72，Δ=+0.0972，p=0.1087**；与原模型的 Δ 差为 **−0.1667**，配对措辞 bootstrap 95% 区间约 **[−0.3056，约 0.00]**。Kimi-K3.1-Pro 的 7 次首次 R 全部有 Rscript 执行调用，所以这是较弱且未达显著的同向信号，不是"只点名、没有执行调用"，也不能反过来说 cue 已被证明无效。见 [跨模型报告](REPORT.qmd)、[预注册](prereg/norris-r4-v1.json) 与 [依据记录](notes/2026-11-21-cross-model-replication.md)。
 
 ## 为什么叫这个名字
 
@@ -61,6 +61,8 @@
 | `cue_cross_model.py` | 两模型分别计算后的配对措辞 bootstrap 与跨模型差值区间 |
 | `cue_cross_model_figure.R` | 跨模型主对比总览图 |
 | `cue_cross_model_figures.R` | 原五类图的双模型版本：小多图、成对哑铃、模型轨迹与分面 |
+| `cue_eda_inspect.R` | 对一份 tidy 表做七步数据质量检查：结构、缺失、重复、频数、分布与相关性 |
+| `cue_eda.R` | 跨模型描述性 EDA：运行时构成、实际工具序列、3-and-3 子组、位置趋势与逐名字模式；不改变主判定 |
 
 ### 图
 
@@ -70,12 +72,12 @@
 |---|---|
 | `fig-contrast` | 差多少：四条件同一 0–100% 轴，小点=一个名字，粗点与横线=条件均值及 95% 聚类 bootstrap 区间 |
 | `fig-rank` | 是类别还是单个名字：主对比 24 个名字的成对哑铃图；不逐个名字作推断 |
-| `fig-blocks` | 是不是某一轮碰巧：六轮模型轨迹；原批六轮均正，Kimi 五正一零 |
+| `fig-blocks` | 是不是某一轮碰巧：六轮模型轨迹；DeepSeek-V4.1-Flash-1017 六轮均正，Kimi-K3.1-Pro 五正一零 |
 | `fig-mixed` | R 是新增候选还是主语言替换：四条件的运行时组合；最终主语言未被记录 |
-| `fig-effort` | 是不是只是更用力：四条件共用纵轴，步数、工具调用和输出 token 分面，横轴独立 |
+| `fig-effort` | 工作量分布：四条件共用纵轴，步数、工具调用和输出 token 分面；前两个面板底部以淡虚线标出 3 |
 | `fig-cross-model` | 两模型四条件的首次 R 率总览：效应是否按原强度复现 |
 
-不成图的维度（逐 trial 的 `round`×条件 24 格、6 条 missing 明细）留在正文表里：把表画成图只是换个形式，不是多一个信息。
+不成图的维度（逐 trial 的 `round`×条件 24 格、missing 明细与额外 EDA）留在 `summary/` 和 `eda/` 派生表中：把表画成图只是换个形式，不是多一个信息。
 
 ## 跑一遍
 
@@ -89,13 +91,16 @@ python  studies/workspace-name-cue/analysis/cue_effect.py --prereg studies/works
 Rscript studies/workspace-name-cue/analysis/cue_persistence.R  # summary/*.csv
 Rscript studies/workspace-name-cue/analysis/cue_persistence.R trials-kimi.csv summary-kimi
 python  studies/workspace-name-cue/analysis/cue_cross_model.py  # 配对措辞 bootstrap 与对照表
+Rscript studies/workspace-name-cue/analysis/cue_eda_inspect.R records/workspace-name-cue/trials.csv records/workspace-name-cue/eda/deepseek-inspector.md
+Rscript studies/workspace-name-cue/analysis/cue_eda_inspect.R records/workspace-name-cue/trials-kimi.csv records/workspace-name-cue/eda/kimi-inspector.md
+Rscript studies/workspace-name-cue/analysis/cue_eda.R       # 描述性 EDA，不进入主判定
 Rscript studies/workspace-name-cue/analysis/cue_report.R
 Rscript studies/workspace-name-cue/analysis/cue_cross_model_figure.R
 Rscript studies/workspace-name-cue/analysis/cue_cross_model_figures.R  # 最终图均为双模型版本
 cd studies/workspace-name-cue && quarto render REPORT.qmd   # 叙述报告，需先有 figures 与 summary/
 ```
 
-报告里的图由 `cue_report.R` 生成、表由 `cue_persistence.R` 生成，所以**两者都必须在渲染之前跑过**：缺图会渲染出裂图，缺表会让 `read.csv` 直接报错停下——后者是故意的，宁可渲染失败，也不让报告退回手写数字。
+报告的最终图由两个 `cue_cross_model_figure(s).R` 脚本生成，表格由 `cue_persistence.R` 与跨模型分析生成，新增 EDA 数字由 `cue_eda.R` 复算。渲染前必须运行对应脚本：缺图会渲染出裂图，缺表会让 `read.csv` 直接报错停下；新增文字结论则通过 EDA 对账检查，不能靠手工改写。
 
 `REPORT.qmd` 里的图指向 `../../records/.../figures/*.png`，表读 `../../records/.../summary/*.csv`，路径都相对 qmd 文件本身；渲染结果 `REPORT.html` 把图内嵌成 base64，离开仓库也打得开。数学式以 MathML 输出（`html-math-method: mathml`），不加载 MathJax 或其他 CDN 资源。
 
