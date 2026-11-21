@@ -75,7 +75,7 @@ blockquote { border-left: 3px solid var(--accent); color: var(--ink); font-style
 
 目录名并非智能体主动发现，而是由编排器在首次输出前通过运行时上下文和工作目录通知注入。因此，本研究测量的是**被动送达的路径线索与首次运行时选择之间的关系**，不是智能体主动探索环境的倾向。
 
-### 条件与主对比
+### 条件
 
 | 条件 | 目录名类型 | 作用 |
 |---|---|---|
@@ -84,15 +84,11 @@ blockquote { border-left: 3px solid var(--accent); color: var(--ink); font-style
 | `py-eco` | Python 包名，如 `pandas`、`sympy` | Python 生态对照 |
 | `plain` | 英文地名或姓氏，如 `marlow`、`radley` | 不含软件含义的参照 |
 
-主对比为：
-
-$$\Delta = P(Y=R \mid \text{r-eco}) - P(Y=R \mid \text{software})$$
-
-其中 $Y$ 为下节定义的结局。两组都使用真实软件项目名，但词频、熟悉度和社区联想并未完全匹配；独立软件名也可能带有实现语言联想。因此，该对比估计的是**这批 R 包名相对于这批独立软件名的差异**，不证明只有语言语义一项不同。
+主对比取 `r-eco` 与 `software`。两组都使用真实软件项目名，但词频、熟悉度和社区联想并未完全匹配；独立软件名也可能带有实现语言联想。因此，该对比估计的是**这批 R 包名相对于这批独立软件名的差异**，不证明只有语言语义一项不同。
 
 每组包含 12 个同属一类但字面不同的名字，避免结论只对应单个字符串；推断仍限于所选名字。每个名字重复 6 次，每条件 72 次，每模型共 288 次。48 条完整路径在 `o200k_base` 代理切分器下均为 11 token；这是规划时的匹配手段，不是两个模型真实切分长度相同的保证。
 
-### 主结局
+### 结局与统一记号
 
 主结局 $Y$ 是**首次在已执行工具调用的参数中点名的运行时**，该调用可以只是解释器探测，不一定已经开展计算。
 
@@ -102,34 +98,59 @@ $$\Delta = P(Y=R \mid \text{r-eco}) - P(Y=R \mid \text{software})$$
 
 未点名不等于未计算：试次也可能只用 PowerShell 公式完成回归。主结局回答“哪个运行时先进入候选”，不回答“最终用哪个运行时完成计算”。统计检验以名字为聚类单位，避免把同一名字下的 6 次试次当作完全独立的证据。
 
+| 记号 | 含义 |
+|---|---|
+| $m\in\{\mathrm D,\mathrm K\}$ | $\mathrm D$：DeepSeek-V4.1-Flash-1017；$\mathrm K$：Kimi-K3.1-Pro |
+| $r,s$；$g,h$ | $r$：`r-eco`；$s$：`software`；$g,h$：任意条件 |
+| $R,P,0$；$U$ | 首次 R、首次 Python、未点名；$U=\{R,P\}$ 表示点名任一运行时 |
+| $n_{m,g}(y)$ | 模型 $m$、条件 $g$、结局 $y$ 的试次数；省略 $g$ 时表示全批合计 |
+| $\hat p_{m,g}(y)$ | 样本比例，$n_{m,g}(y)/72$ |
+| $\Delta_m(g,h;y)$ | 条件差，$\hat p_{m,g}(y)-\hat p_{m,h}(y)$ |
+| $\Delta_m$ | 预注册主对比，$\Delta_m(r,s;R)$ |
+| $p_m(g,h;y)$；$p_m$ | 对应精确单侧 p 值；不带参数时指主对比的 p 值 |
+
 ## 主要结果
 
 ### 两个模型的主对比
 
-```{r}
-#| results: asis
-cross_display <- read.csv("../../records/workspace-name-cue/summary/cross-model-display.csv")
-knitr::kable(cross_display, row.names = FALSE,
-             col.names = c("模型", "`r-eco`", "`software`", "差", "精确单侧 p"))
-```
+两个模型的估计与检验并列为：
 
-DeepSeek-V4.1-Flash-1017 的主估计为：
+$$
+\begin{aligned}
+\Delta_{\mathrm D} &= \frac{30}{72}-\frac{11}{72}=0.2639, &
+p_{\mathrm D} &= \frac{658}{2{,}704{,}156}=0.000243,\\[4pt]
+\Delta_{\mathrm K} &= \frac{7}{72}-\frac{0}{72}=0.0972, &
+p_{\mathrm K} &= \frac{293{,}930}{2{,}704{,}156}=0.108696.
+\end{aligned}
+$$
 
-$$\Delta = \frac{30}{72} - \frac{11}{72} = 0.2639$$
+两行的 p 值均来自主对比 24 个名字的 $\binom{24}{12}=2{,}704{,}156$ 种标签分配，分子是产生至少同样大差距的分配数。检验的前提是零假设下名字标签可交换；它支持这批名字的分组差异，不证明其他词汇属性已被排除。Kimi-K3.1-Pro 未达到 0.05 显著性标准，且 $\sum_{g\ne r}n_{\mathrm K,g}(R)=0$（0/216），主对比处在低基线环境中。
 
-对主对比的 24 个名字穷举 $\binom{24}{12}=2{,}704{,}156$ 种标签分配，其中 658 种产生至少同样大的差，精确单侧 p = 0.000243。检验的前提是零假设下名字标签可交换；它支持这批名字的分组差异，不证明其他词汇属性已被排除。
+跨模型差与配对措辞 bootstrap 区间为：
 
-Kimi-K3.1-Pro 的差值为 9.72 个百分点，p = 0.1087，未达到 0.05 显著性标准；其他三个条件的首次 R 合计为 0/216，主对比处在低基线环境中。两模型估计量之差为 −16.67 个百分点，配对措辞 bootstrap 95% 区间约为 [−30.56，约 0.00]。这描述的是两批之间的异质性；模型、宿主版本和日历批次无法在此设计中分离，未达显著也不能解读为效应已被排除。
+$$
+\Delta_{\mathrm K}-\Delta_{\mathrm D}=-\frac{12}{72}=-0.1667,
+\qquad 95\%\,\mathrm{CI}\approx[-0.3056,\ 0.0000].
+$$
+
+这描述的是两批之间的异质性；模型、宿主版本和日历批次无法在此设计中分离，未达显著也不能解读为效应已被排除。
 
 ![四个条件中，两个模型首次点名 R 的比例。数字为 R 试次数 / 72。](../../records/workspace-name-cue/figures/fig-cross-model.png){#fig-cross-model fig-alt="四个条件按行排列，两个模型以不同颜色的点和连线比较首次 R 比例；Kimi-K3.1-Pro 仅在 R 包名条件出现 7 次 R"}
 
 ### 条件分布与另一对照
 
-区间按名字聚类 bootstrap：每次从两组各 12 个名字中有放回重抽，计算均值差，重复一万次并取 2.5% 与 97.5% 分位。DeepSeek-V4.1-Flash-1017 的主对比 95% 区间为 [0.153, 0.389]。
+区间按名字聚类 bootstrap：每次从两组各 12 个名字中有放回重抽，计算均值差，重复一万次并取 2.5% 与 97.5% 分位。DeepSeek-V4.1-Flash-1017 的主对比区间为 $\Delta_{\mathrm D}\in[0.153,\ 0.389]$（95% CI）。
 
 ![两个模型分别展示四条件。小点为单个名字的 6 次试次，粗点与横线为条件均值及 95% 聚类 bootstrap 区间。](../../records/workspace-name-cue/figures/fig-contrast.png){#fig-contrast fig-alt="两个模型各一幅四条件散点图，共用 0 到 100% 横轴；附条件均值和名字聚类区间"}
 
-DeepSeek-V4.1-Flash-1017 的 `software` 组有 12/72 次全程未点名运行时，`r-eco` 为 7/72，`plain` 为 4/72；未点名均计入“非 R”。改用 `plain` 作对照时，差值为 30/72 − 16/72 = 19.44 个百分点，p = 0.0047。**这是另一对照下的估计，不是主对比的统计下限。**
+DeepSeek-V4.1-Flash-1017 的未点名计数为 $n_{\mathrm D,s}(0)=12$、$n_{\mathrm D,r}(0)=7$、$n_{\mathrm D,\text{plain}}(0)=4$，均保留在分母中。改用 `plain` 作对照时：
+
+$$
+\Delta_{\mathrm D}(r,\text{plain};R)=\frac{30}{72}-\frac{16}{72}=0.1944,
+\qquad p_{\mathrm D}(r,\text{plain};R)=0.0047.
+$$
+
+**这是另一对照下的估计，不是主对比的统计下限。**
 
 ## 替代解释
 
@@ -139,7 +160,13 @@ DeepSeek-V4.1-Flash-1017 的 `software` 组有 12/72 次全程未点名运行时
 
 DeepSeek-V4.1-Flash-1017 的 12 个 R 包名中，有 6 个在 6 次试次里至少 3 次首次点名 R；12 个独立软件名中没有一个达到这一水平。探索性逐一删除主对比的 24 个名字时，其差值始终为正，范围为 22.60 至 28.66 个百分点。
 
-Kimi-K3.1-Pro 的 7 次首次 R 集中在 `rlang`（5/6）、`dplyr` 和 `forcats`（各 1/6）。48 个名字中，只有 `rlang` 的首次 R 次数从 DeepSeek-V4.1-Flash-1017 的 3/6 反向升至 5/6；其余 33 个下降、14 个相同。描述性删除 `rlang` 后，Kimi-K3.1-Pro 的 `r-eco` 仅剩 2/66，而 `software` 为 0/72，差值从 9.72 降至 3.03 个百分点。这些删除分析不是新的预注册检验，但说明其点估计与名字覆盖高度依赖 `rlang`。
+Kimi-K3.1-Pro 的 7 次首次 R 集中在 `rlang`（5/6）、`dplyr` 和 `forcats`（各 1/6）。48 个名字中，只有 `rlang` 的首次 R 次数从 DeepSeek-V4.1-Flash-1017 的 3/6 反向升至 5/6；其余 33 个下降、14 个相同。描述性删除 `rlang` 后：
+
+$$
+\Delta_{\mathrm K,-\text{rlang}}=\frac{2}{66}-\frac{0}{72}=0.0303.
+$$
+
+这些删除分析不是新的预注册检验，但说明其点估计与名字覆盖高度依赖 `rlang`。
 
 ### 轮次与位置
 
@@ -172,19 +199,68 @@ DeepSeek-V4.1-Flash-1017 各条件的步数、工具调用数和输出 token 中
 
 ![每条为某模型某条件的 72 次试次，按整个试次点名过的运行时组合分段。过窄分段不标数字。](../../records/workspace-name-cue/figures/fig-mixed.png){#fig-mixed fig-alt="两个模型各四条件百分百堆叠条形图，分为仅 R、R 与 Python、仅 Python 和未点名"}
 
-DeepSeek-V4.1-Flash-1017 中，整个试次只点名 R 的有 5 次，R 与 Python 都点名的有 57 次，仅点名 Python 的有 201 次，未点名的有 25 次。61 条以 R 标签开头的记录中，56 条在整个试次中还点名 Python；这 56 条的首次调用本身就同时命中两者，不能读成“先用 R 计算、随后换成 Python”。以 Python 开头的 202 条中，只有 1 条还点名 R。
+两个模型的全批首次结局向量为：
+
+$$
+(n_{\mathrm D}(R),n_{\mathrm D}(P),n_{\mathrm D}(0))=(61,202,25),\qquad
+(n_{\mathrm K}(R),n_{\mathrm K}(P),n_{\mathrm K}(0))=(7,265,16).
+$$
+
+DeepSeek-V4.1-Flash-1017 中，整个试次只点名 R 的有 5 次，R 与 Python 都点名的有 57 次。61 条以 R 标签开头的记录中，56 条在整个试次中还点名 Python；这 56 条的首次调用本身就同时命中两者，不能读成“先用 R 计算、随后换成 Python”。以 Python 开头的 202 条中，只有 1 条还点名 R。
 
 因此，原批证据支持**R 更可能进入首次候选**，不支持断言最终主语言发生替换。最终完成计算的运行时没有被记录。
 
-Kimi-K3.1-Pro 首次点名 Python、R 和未点名的数量分别为 265、7 和 16；整个试次只有 2 次混用，5 次仅点名 R。其 `r-eco` 与 `software` 条件点名任一运行时的数量恰好相同（均为 67/72）：R 增加 7 次、Python 减少 7 次，未点名均为 5 次。这是与原批不同的**聚合构成变化**，但主对比未达显著，不能据此断言个体试次发生了语言替换。
+Kimi-K3.1-Pro 整个试次只有 2 次混用，5 次仅点名 R。其主对比的构成变化为：
 
-把首次 R 按“全程仅 R”与“全程 R/Python 双点名”拆开，DeepSeek-V4.1-Flash-1017 的主对比为 5/72 + 14/72 = 19/72，Kimi-K3.1-Pro 为 5/72 + 2/72 = 7/72。因此，跨模型 −16.67 个百分点的差在算术上全部来自双点名部分；全程仅 R 的贡献相同，但名字构成不同，Kimi-K3.1-Pro 的 5 条全部来自 `rlang`。这是联合分布分解，不是对探测风格或最终主语言的因果识别。
+$$
+\begin{aligned}
+n_{\mathrm K,r}(U)&=n_{\mathrm K,s}(U)=67, &
+n_{\mathrm K,r}(R)-n_{\mathrm K,s}(R)&=7,\\
+n_{\mathrm K,r}(0)&=n_{\mathrm K,s}(0)=5, &
+n_{\mathrm K,r}(P)-n_{\mathrm K,s}(P)&=-7.
+\end{aligned}
+$$
+
+这与原批是不同的**聚合构成变化**，但主对比未达显著，不能据此断言个体试次发生了语言替换。
+
+令 $\Delta_m^{\mathrm{only}}$ 和 $\Delta_m^{\mathrm{dual}}$ 分别表示主对比中“全程仅 R”与“全程 R/Python 双点名”的贡献，则 $\Delta_m=\Delta_m^{\mathrm{only}}+\Delta_m^{\mathrm{dual}}$，且：
+
+$$
+\begin{aligned}
+\Delta_{\mathrm D}^{\mathrm{only}}&=\frac{5}{72}, &
+\Delta_{\mathrm D}^{\mathrm{dual}}&=\frac{14}{72},\\
+\Delta_{\mathrm K}^{\mathrm{only}}&=\frac{5}{72}, &
+\Delta_{\mathrm K}^{\mathrm{dual}}&=\frac{2}{72}.
+\end{aligned}
+$$
+
+因此：
+
+$$
+\Delta_{\mathrm K}^{\mathrm{dual}}-\Delta_{\mathrm D}^{\mathrm{dual}}
+=-\frac{12}{72}=-0.1667,
+\qquad
+\Delta_{\mathrm K}^{\mathrm{only}}-\Delta_{\mathrm D}^{\mathrm{only}}=0.
+$$
+
+跨模型差在算术上全部来自双点名部分；全程仅 R 的名字构成不同，Kimi-K3.1-Pro 的 5 条全部来自 `rlang`。这是联合分布分解，不是对探测风格或最终主语言的因果识别。
 
 ### 双命中与执行口径
 
-`r-eco` 的 30 次首次 R 中，25 次为 R/Python 双命中，5 次只命中 R。若把双命中全部改判为 Python，DeepSeek-V4.1-Flash-1017 的主对比缩为 6.94 个百分点，p = 0.0466。这个规则改变了估计量，并会按解释器探测风格筛选试次，不能称为更严格的下界。
+DeepSeek-V4.1-Flash-1017 的 30 次首次 R 中有 25 次双命中，Kimi-K3.1-Pro 的 7 次中有 2 次双命中；两批均有 5 次首次只命中 R。若把双命中全部改判为 Python，将相应量记为 $\Delta_m^{\mathrm{single}}$：
 
-更有解释力的敏感性口径是“试次中是否存在 `Rscript <脚本>` 或 `Rscript -e` 执行调用”，排除 `--version` 与仅探测命令：
+$$
+\begin{aligned}
+\Delta_{\mathrm D}^{\mathrm{single}}&=\frac{5}{72}-0=0.0694, &
+p_{\mathrm D}^{\mathrm{single}}&=0.0466,\\
+\Delta_{\mathrm K}^{\mathrm{single}}&=\frac{5}{72}-0=0.0694, &
+p_{\mathrm K}^{\mathrm{single}}&=0.5000.
+\end{aligned}
+$$
+
+相同的点估计对应不同的措辞分布与置换结果。这个规则改变了估计量，并会按解释器探测风格筛选试次，不能称为更严格的下界。
+
+更有解释力的敏感性口径是“试次中是否存在 `Rscript <脚本>` 或 `Rscript -e` 执行调用”，排除 `--version` 与仅探测命令；相应差值和 p 值记为 $\Delta_m^{\mathrm{exec}}$ 与 $p_m^{\mathrm{exec}}$：
 
 ```{r}
 #| results: asis
@@ -203,25 +279,51 @@ rules$software <- sprintf("%d/72", round(rules$software * 72))
 rules$delta <- sprintf("%+.4f", rules$delta)
 rules$p <- sprintf("%.4f", rules$p)
 knitr::kable(rules, row.names = FALSE,
-             col.names = c("模型", "`r-eco`", "`software`", "差", "精确单侧 p"))
+             col.names = c("模型", "`r-eco`", "`software`",
+                           "$\\Delta_m^{\\mathrm{exec}}$", "$p_m^{\\mathrm{exec}}$"))
 ```
 
 执行口径下两模型方向与主分析一致，Kimi-K3.1-Pro 的 7 条首次 R 记录也全部有 Rscript 执行调用。不过，**执行调用不等于成功完成计算，这一口径也不补上最终主语言的信息**；它支持同一方向，不表示原主估计量对双命中行序不敏感。
 
 ## 全部配对比较
 
-| 对比 | 检验结局 | 差 | p | 地位 |
-|---|---|---:|---:|---|
-| `r-eco` vs `software` | 首次 R | +0.2639 | 0.0002 | 预注册主对比 |
-| `r-eco` vs `py-eco` | 首次 R | +0.3611 | < 0.0001 | 包名间对比 |
-| `py-eco` vs `software` | 首次 Python | +0.2361 | 0.0001 | 预注册次对比 |
-| `r-eco` vs `plain` | 首次 R | +0.1944 | 0.0047 | 预注册次对比 |
-| `py-eco` vs `plain` | 首次 Python | +0.1944 | 0.0020 | 探索性 |
-| `software` vs `plain` | 点名任一运行时 | −0.1111 | 不检验 | 预注册次对比；此处仅描述 |
+```{r}
+#| results: asis
+library(jsonlite)
+reference <- fromJSON("../../records/workspace-name-cue/judgment/cue-effect.json",
+                      simplifyVector = TRUE)
+candidate <- fromJSON("../../records/workspace-name-cue/judgment/cue-effect-kimi.json",
+                      simplifyVector = TRUE)
+a <- reference$pairwise_matrix
+b <- candidate$pairwise_matrix
+key <- function(x) paste(x$a, x$b, x$outcome, sep = "|")
+b <- b[match(key(a), key(b)), ]
+stopifnot(!anyNA(b$a), identical(key(a), key(b)))
+fmt <- function(delta, p) {
+  base <- sprintf("%+.4f", delta)
+  ifelse(
+    is.na(p), paste0(base, "（不检验）"),
+    ifelse(p < 0.0001, paste0(base, "（<0.0001）"),
+           paste0(base, "（", sprintf("%.4f", p), "）"))
+  )
+}
+outcome_labels <- c("R" = "首次 R", "python" = "首次 Python",
+                    "runtime-used" = "任一运行时")
+pair_table <- data.frame(
+  comparison = paste0("`", a$a, "` vs `", a$b, "`"),
+  outcome = unname(outcome_labels[a$outcome]),
+  `DeepSeek-V4.1-Flash-1017` = fmt(a$difference, a$p_one_sided),
+  `Kimi-K3.1-Pro` = fmt(b$difference, b$p_one_sided)
+)
+knitr::kable(
+  pair_table, row.names = FALSE,
+  col.names = c("对比（$g$ vs $h$）", "结局 $y$",
+                "$\\Delta_{\\mathrm D}(g,h;y)$（$p$）",
+                "$\\Delta_{\\mathrm K}(g,h;y)$（$p$）")
+)
+```
 
-这些结果来自 DeepSeek-V4.1-Flash-1017。五对已计算的 p 值在六重 Bonferroni 校正下显著性判断不变：主对比校正后约 0.0015，`r-eco` vs `plain` 约 0.0282。包名间的词频、熟悉度和量程位置不同，`py-eco` 在 R 结局上接近地板、在 Python 结局上接近天花板，不能据此给两种线索的强度排名。`software` vs `plain` 的负差只说明该批独立软件名条件的运行时点名率更低。
-
-Kimi-K3.1-Pro 的五个已计算 p 值介于 0.1087 与 0.2329，均未达到 0.05；其 `software` 与 `plain` 点名任一运行时的数量均为 67/72，差值为零，按既定规则不报告 p 值。
+两列使用完全相同的估计量；第六行按既定规则只描述、不检验。DeepSeek-V4.1-Flash-1017 的五个已计算 p 值在六重 Bonferroni 校正下显著性判断不变：主对比校正后约 0.0015，`r-eco` vs `plain` 约 0.0282；Kimi-K3.1-Pro 的五个已计算 p 值均大于 0.05。包名间的词频、熟悉度和量程位置不同，`py-eco` 在 R 结局上接近地板、在 Python 结局上接近天花板，不能据此给两种线索的强度排名。
 
 ## 仪器核验
 

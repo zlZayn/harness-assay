@@ -161,7 +161,7 @@ p_blocks <- ggplot(by_block, aes(x = round, y = delta_pp, colour = model, group 
   labs(
     title = "六轮主对比的方向",
     subtitle = "每点为一轮；R 包名与独立软件名各 12 次试次",
-    x = "轮次", y = "R 率差（百分点）",
+    x = "轮次", y = "Δ（百分点）",
     caption = "每模型 6 轮，共 288 次试次"
   ) +
   guides(colour = guide_legend(nrow = 1)) +
